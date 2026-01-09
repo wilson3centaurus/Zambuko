@@ -1,0 +1,94 @@
+Zambuko 
+Executive Summary
+Zambuko is a telehealth innovation designed to provide fast, affordable, and remote access to healthcare services in underserved and remote communities. It reduces travel expenses, decongests clinics, improves response times, and saves lives. The system includes EcoCash payment integration, AI-assisted triage, emergency dispatching, real-time doctor availability, and medication delivery.
+Core Features
+• Real-time doctor availability (Online, Busy, Offline)
+• EcoCash/OneMoney/Telecash integrated payments
+• AI-supported symptom triage
+• Video, audio, and chat consultations
+• Emergency GPS-based dispatching
+• E-prescriptions and pharmacy delivery
+• Low-bandwidth mode for 2G/3G rural network environments
+• Offline storage with automatic syncing
+System Model
+Core Components:
+• Patient App (Mobile/Web)
+• Doctor App
+• Backend API Gateway
+• AI Triage Engine
+• Payment Gateway (EcoCash)
+• Emergency Dispatch Module (GPS responders)
+• E-Prescription & Pharmacy Module
+• Real-time Availability Tracker
+• Database Layer (SQL + NoSQL for presence data)
+Workflow
+1. Patient logs in via app
+2. Enters symptoms → AI triage assigns priority (Low/Moderate/High/Emergency)
+3. System displays available doctors
+4. Patient pays using EcoCash/USSD
+5. Consultation begins (video/audio/chat)
+6. Doctor issues prescription OR emergency dispatch initiated
+7. Pharmacy delivers medication
+8. Follow-up scheduled & data synced
+Proposed Algorithms
+Below are the formal algorithms powering Zambuko.
+Algorithm 1: Doctor Matching Algorithm
+
+Input: patient_location, specialty, urgency_level
+Output: ranked list of suitable doctors
+
+1. Retrieve all doctors with given specialty.
+2. Filter doctors where status = AVAILABLE.
+3. If urgency_level = EMERGENCY:
+       Include doctors marked as emergency-capable even if IN_SESSION.
+4. For each doctor:
+       Compute score = (w1 * proximity_score)
+                     + (w2 * rating_score)
+                     - (w3 * queue_length)
+5. Sort doctors by score in descending order.
+6. Return top-ranked doctor(s).
+
+Algorithm 2: AI Symptom Triage Algorithm
+
+Input: symptoms, age, vitals, comorbidity_flags
+Output: triage_level (LOW / MODERATE / HIGH / EMERGENCY)
+
+1. If symptoms contain chest pain OR SpO2 < 90% → return EMERGENCY.
+2. Initialize risk_score = 0.
+3. For each symptom:
+       risk_score += symptom_weight[symptom]
+4. Adjust risk_score by age_factor and comorbidity_factor.
+5. If risk_score >= emergency_threshold → EMERGENCY.
+6. Else if >= high_threshold → HIGH.
+7. Else if >= moderate_threshold → MODERATE.
+8. Else → LOW.
+
+Algorithm 3: Doctor Availability Heartbeat System
+
+Input: doctor_heartbeat_timestamp
+Output: doctor_state (AVAILABLE / OFFLINE / IN_SESSION)
+
+1. Doctor app sends heartbeat every 30 seconds.
+2. If heartbeat missing for > 90 seconds:
+       Mark doctor as OFFLINE.
+3. If doctor logs in:
+       Set state = AVAILABLE.
+4. When a consultation is accepted:
+       Set state = IN_SESSION.
+5. When consultation ends:
+       Set state = AVAILABLE.
+
+Algorithm 4: Emergency Dispatch Algorithm
+
+Input: patient_location
+Output: nearest responder assigned
+
+1. Retrieve responders within a defined radius.
+2. Compute ETA for each responder using:
+       distance + road_network_speed.
+3. Sort responders by ETA (ascending).
+4. Select the responder with the lowest ETA and available status.
+5. Mark responder as EN_ROUTE.
+6. If none available:
+       Escalate to nearest clinic and national hotline.
+

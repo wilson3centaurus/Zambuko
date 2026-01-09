@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D9488">
+    <meta name="description" content="Zambuko Admin Dashboard - Manage your telehealth platform">
+    <link rel="manifest" href="manifest.json">
+    <title>Zambuko - Admin Dashboard</title>
+    <link rel="stylesheet" href="../shared/css/common.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-logo">
+                <img src="../shared/img/zambuko-logo.svg" alt="Zambuko" style="height: 60px; margin-bottom: 8px;">
+                <p>Admin Dashboard</p>
+            </div>
+            <div class="login-card">
+                <h2>Admin Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="admin@zambuko.co.zw" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+                <p style="text-align: center; margin-top: 16px; color: #666;">
+                    Demo: admin@zambuko.co.zw / admin123
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="mainApp" class="screen">
+        <div class="admin-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <img src="../shared/img/zambuko-icon.svg" alt="Zambuko" style="height: 40px;">
+                    <span>Admin Panel</span>
+                </div>
+                <nav class="sidebar-nav">
+                    <a class="sidebar-item active" onclick="navigateTo('dashboard')">
+                        <span class="sidebar-icon">📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a class="sidebar-item" onclick="navigateTo('doctors')">
+                        <span class="sidebar-icon">👨‍⚕️</span>
+                        <span>Doctors</span>
+                    </a>
+                    <a class="sidebar-item" onclick="navigateTo('patients')">
+                        <span class="sidebar-icon">👥</span>
+                        <span>Patients</span>
+                    </a>
+                    <a class="sidebar-item" onclick="navigateTo('consultations')">
+                        <span class="sidebar-icon">📋</span>
+                        <span>Consultations</span>
+                    </a>
+                    <a class="sidebar-item" onclick="navigateTo('emergencies')">
+                        <span class="sidebar-icon">🚨</span>
+                        <span>Emergency Requests</span>
+                    </a>
+                    <a class="sidebar-item" onclick="navigateTo('dispatches')">
+                        <span class="sidebar-icon">🚑</span>
+                        <span>Ambulance Units</span>
+                    </a>
+                    <a class="sidebar-item" onclick="navigateTo('payments')">
+                        <span class="sidebar-icon">💰</span>
+                        <span>Payments</span>
+                    </a>
+                    <a class="sidebar-item" onclick="navigateTo('analytics')">
+                        <span class="sidebar-icon">📈</span>
+                        <span>Analytics</span>
+                    </a>
+                    <a class="sidebar-item" onclick="navigateTo('settings')">
+                        <span class="sidebar-icon">⚙️</span>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+                <div class="sidebar-footer">
+                    <button class="btn btn-secondary btn-block" onclick="logout()">Logout</button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Top Bar -->
+                <header class="topbar">
+                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <div class="topbar-right">
+                        <div class="notification-bell" onclick="showNotifications()">
+                            🔔
+                            <span class="notification-badge" id="notifBadge">3</span>
+                        </div>
+                        <div class="admin-profile">
+                            <span id="adminName">Admin</span>
+                            <div class="admin-avatar">A</div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Dashboard View -->
+                <div id="dashboardView" class="view active">
+                    <div class="dashboard-content">
+                        <!-- Stats Cards -->
+                        <div class="stats-row">
+                            <div class="stat-card-lg">
+                                <div class="stat-icon doctors">👨‍⚕️</div>
+                                <div class="stat-info">
+                                    <div class="stat-value" id="totalDoctors">0</div>
+                                    <div class="stat-label">Total Doctors</div>
+                                    <div class="stat-trend up" id="doctorsOnline">0 online</div>
+                                </div>
+                            </div>
+                            <div class="stat-card-lg">
+                                <div class="stat-icon patients">👥</div>
+                                <div class="stat-info">
+                                    <div class="stat-value" id="totalPatients">0</div>
+                                    <div class="stat-label">Total Patients</div>
+                                    <div class="stat-trend up">+12% this week</div>
+                                </div>
+                            </div>
+                            <div class="stat-card-lg">
+                                <div class="stat-icon consults">📋</div>
+                                <div class="stat-info">
+                                    <div class="stat-value" id="totalConsults">0</div>
+                                    <div class="stat-label">Consultations Today</div>
+                                    <div class="stat-trend up" id="consultsTrend">-</div>
+                                </div>
+                            </div>
+                            <div class="stat-card-lg">
+                                <div class="stat-icon revenue">💰</div>
+                                <div class="stat-info">
+                                    <div class="stat-value" id="totalRevenue">$0</div>
+                                    <div class="stat-label">Revenue Today</div>
+                                    <div class="stat-trend up">+8% vs yesterday</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row -->
+                        <div class="charts-row">
+                            <div class="chart-card">
+                                <h3>Consultations Overview</h3>
+                                <div class="chart-container">
+                                    <canvas id="consultsChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-card">
+                                <h3>Triage Distribution</h3>
+                                <div class="chart-container">
+                                    <canvas id="triageChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="activity-row">
+                            <div class="activity-card">
+                                <div class="card-header">
+                                    <h3>Recent Consultations</h3>
+                                    <a href="#" onclick="navigateTo('consultations')">View All</a>
+                                </div>
+                                <div id="recentConsults" class="activity-list"></div>
+                            </div>
+                            <div class="activity-card">
+                                <div class="card-header">
+                                    <h3>Doctor Availability</h3>
+                                    <a href="#" onclick="navigateTo('doctors')">Manage</a>
+                                </div>
+                                <div id="doctorStatus" class="activity-list"></div>
+                            </div>
+                        </div>
+
+                        <!-- Emergency Alerts -->
+                        <div class="alerts-section">
+                            <div class="card-header">
+                                <h3>🚨 Active Emergencies</h3>
+                            </div>
+                            <div id="activeEmergencies"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doctors View -->
+                <div id="doctorsView" class="view">
+                    <div class="view-header">
+                        <h2>Manage Doctors</h2>
+                        <button class="btn btn-primary" onclick="showAddDoctorModal()">+ Add Doctor</button>
+                    </div>
+                    <div class="filters-bar">
+                        <input type="text" class="form-input" id="doctorSearch" placeholder="Search doctors..." oninput="filterDoctors()">
+                        <select class="form-select" id="doctorStatusFilter" onchange="filterDoctors()">
+                            <option value="">All Status</option>
+                            <option value="AVAILABLE">Available</option>
+                            <option value="IN_SESSION">In Session</option>
+                            <option value="OFFLINE">Offline</option>
+                        </select>
+                        <select class="form-select" id="specialtyFilter" onchange="filterDoctors()">
+                            <option value="">All Specialties</option>
+                            <option value="General Practice">General Practice</option>
+                            <option value="Pediatrics">Pediatrics</option>
+                            <option value="Cardiology">Cardiology</option>
+                        </select>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table" id="doctorsTable">
+                            <thead>
+                                <tr>
+                                    <th>Doctor</th>
+                                    <th>Specialty</th>
+                                    <th>Status</th>
+                                    <th>Rating</th>
+                                    <th>Queue</th>
+                                    <th>Emergency</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="doctorsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Patients View -->
+                <div id="patientsView" class="view">
+                    <div class="view-header">
+                        <h2>Manage Patients</h2>
+                        <button class="btn btn-primary" onclick="showAddPatientModal()">+ Add Patient</button>
+                    </div>
+                    <div class="filters-bar">
+                        <input type="text" class="form-input" id="patientSearch" placeholder="Search patients..." oninput="filterPatients()">
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table" id="patientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th>Consultations</th>
+                                    <th>Last Visit</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patientsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Consultations View -->
+                <div id="consultationsView" class="view">
+                    <div class="view-header">
+                        <h2>Consultations</h2>
+                        <div class="view-filters">
+                            <input type="date" class="form-input" id="consultDate" onchange="filterConsultations()">
+                            <select class="form-select" id="consultStatus" onchange="filterConsultations()">
+                                <option value="">All Status</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="IN_PROGRESS">In Progress</option>
+                                <option value="PENDING">Pending</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table" id="consultationsTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Patient</th>
+                                    <th>Doctor</th>
+                                    <th>Date/Time</th>
+                                    <th>Duration</th>
+                                    <th>Triage</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="consultationsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Emergencies View -->
+                <div id="emergenciesView" class="view">
+                    <div class="view-header">
+                        <h2>Emergency Dispatch</h2>
+                    </div>
+                    <div class="emergency-stats">
+                        <div class="stat-card-lg emergency">
+                            <div class="stat-icon">🚑</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="activeRespondersCount">0</div>
+                                <div class="stat-label">Active Responders</div>
+                            </div>
+                        </div>
+                        <div class="stat-card-lg warning">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="avgResponseTime">-</div>
+                                <div class="stat-label">Avg Response Time</div>
+                            </div>
+                        </div>
+                        <div class="stat-card-lg success">
+                            <div class="stat-icon">✓</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="resolvedToday">0</div>
+                                <div class="stat-label">Resolved Today</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="responders-section">
+                        <h3>Responders</h3>
+                        <div id="respondersList" class="responders-grid"></div>
+                    </div>
+                    <div class="emergencies-list">
+                        <h3>Emergency Log</h3>
+                        <div id="emergencyLog"></div>
+                    </div>
+                </div>
+
+                <!-- Payments View -->
+                <div id="paymentsView" class="view">
+                    <div class="view-header">
+                        <h2>Payments & Revenue</h2>
+                        <div class="view-filters">
+                            <select class="form-select" id="paymentPeriod" onchange="loadPaymentStats()">
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                                <option value="year">This Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="payment-stats">
+                        <div class="stat-card-lg">
+                            <div class="stat-icon revenue">💵</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="grossRevenue">$0</div>
+                                <div class="stat-label">Gross Revenue</div>
+                            </div>
+                        </div>
+                        <div class="stat-card-lg">
+                            <div class="stat-icon">💳</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="totalTransactions">0</div>
+                                <div class="stat-label">Transactions</div>
+                            </div>
+                        </div>
+                        <div class="stat-card-lg">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="avgTransaction">$0</div>
+                                <div class="stat-label">Avg Transaction</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="payment-methods">
+                        <h3>Payment Methods Breakdown</h3>
+                        <div class="payment-methods-grid">
+                            <div class="payment-method-card ecocash">
+                                <strong>EcoCash</strong>
+                                <span id="ecocashPercent">0%</span>
+                            </div>
+                            <div class="payment-method-card onemoney">
+                                <strong>OneMoney</strong>
+                                <span id="onemoneyPercent">0%</span>
+                            </div>
+                            <div class="payment-method-card telecash">
+                                <strong>Telecash</strong>
+                                <span id="telecashPercent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="transactions-section">
+                        <h3>Recent Transactions</h3>
+                        <div id="transactionsList"></div>
+                    </div>
+                </div>
+
+                <!-- Analytics View -->
+                <div id="analyticsView" class="view">
+                    <div class="view-header">
+                        <h2>Analytics & Reports</h2>
+                        <button class="btn btn-secondary" onclick="exportReport()">📥 Export Report</button>
+                    </div>
+                    <div class="analytics-grid">
+                        <div class="chart-card full-width">
+                            <h3>Consultation Trends (Last 30 Days)</h3>
+                            <div class="chart-container large">
+                                <canvas id="trendsChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Top Specialties</h3>
+                            <div class="chart-container">
+                                <canvas id="specialtiesChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Peak Hours</h3>
+                            <div class="chart-container">
+                                <canvas id="hoursChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="kpi-section">
+                        <h3>Key Performance Indicators</h3>
+                        <div class="kpi-grid">
+                            <div class="kpi-card">
+                                <span class="kpi-label">Patient Satisfaction</span>
+                                <span class="kpi-value">4.7/5.0</span>
+                                <div class="kpi-bar"><div class="kpi-fill" style="width: 94%"></div></div>
+                            </div>
+                            <div class="kpi-card">
+                                <span class="kpi-label">Doctor Utilization</span>
+                                <span class="kpi-value">78%</span>
+                                <div class="kpi-bar"><div class="kpi-fill" style="width: 78%"></div></div>
+                            </div>
+                            <div class="kpi-card">
+                                <span class="kpi-label">Avg Wait Time</span>
+                                <span class="kpi-value">4.2 min</span>
+                                <div class="kpi-bar"><div class="kpi-fill" style="width: 85%"></div></div>
+                            </div>
+                            <div class="kpi-card">
+                                <span class="kpi-label">Resolution Rate</span>
+                                <span class="kpi-value">92%</span>
+                                <div class="kpi-bar"><div class="kpi-fill" style="width: 92%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dispatches View -->
+                <div id="dispatchesView" class="view">
+                    <div class="view-header">
+                        <h2>Emergency Dispatch Units</h2>
+                        <button class="btn btn-primary" onclick="openModal('addDispatchModal')">
+                            <span>+ Add Dispatch Unit</span>
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Unit ID</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Contact</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dispatchesTableBody">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 40px;">
+                                        Loading dispatches...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Settings View -->
+                <div id="settingsView" class="view">
+                    <div class="view-header">
+                        <h2>System Settings</h2>
+                    </div>
+                    <div class="settings-grid">
+                        <div class="settings-section">
+                            <h3>General Settings</h3>
+                            <div class="form-group">
+                                <label class="form-label">Platform Name</label>
+                                <input type="text" class="form-input" value="Zambuko Telehealth">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Default Consultation Fee (USD)</label>
+                                <input type="number" class="form-input" value="5.00">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Doctor Commission (%)</label>
+                                <input type="number" class="form-input" value="80">
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h3>Triage Settings</h3>
+                            <div class="form-group">
+                                <label class="form-label">Emergency Threshold</label>
+                                <input type="number" class="form-input" value="45">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">High Priority Threshold</label>
+                                <input type="number" class="form-input" value="30">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Moderate Threshold</label>
+                                <input type="number" class="form-input" value="15">
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h3>Payment Gateways</h3>
+                            <div class="gateway-toggle">
+                                <span>EcoCash</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="gateway-toggle">
+                                <span>OneMoney</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="gateway-toggle">
+                                <span>Telecash</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h3>Notifications</h3>
+                            <div class="gateway-toggle">
+                                <span>Email Notifications</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="gateway-toggle">
+                                <span>SMS Notifications</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="gateway-toggle">
+                                <span>Emergency Alerts</span>
+                                <label class="switch">
+                                    <input type="checkbox" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Add Doctor Modal -->
+    <div id="addDoctorModal" class="modal-overlay">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Doctor</h3>
+                <button class="modal-close" onclick="closeModal('addDoctorModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="addDoctorForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-input" name="name" required placeholder="Dr. John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Specialty</label>
+                            <select class="form-select" name="specialty" required>
+                                <option value="General Practice">General Practice</option>
+                                <option value="Pediatrics">Pediatrics</option>
+                                <option value="Cardiology">Cardiology</option>
+                                <option value="Dermatology">Dermatology</option>
+                                <option value="Psychiatry">Psychiatry</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-input" name="phone" placeholder="0771234567">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" name="email" placeholder="doctor@email.com">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Emergency Capable</label>
+                        <select class="form-select" name="emergencyCapable">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addDoctorModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addDoctor()">Add Doctor</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Dispatch Modal -->
+    <div id="addDispatchModal" class="modal-overlay" onclick="if(event.target === this) closeModal('addDispatchModal')">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add Ambulance/Hospital Unit</h3>
+                    <button class="modal-close" onclick="closeModal('addDispatchModal')">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDispatchForm">
+                        <div class="form-group">
+                            <label class="form-label">Unit ID *</label>
+                            <input type="text" class="form-input" name="unitId" placeholder="AMB-001" required>
+                            <small style="color: #666;">e.g., AMB-001, HOSP-001</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Unit Name *</label>
+                            <input type="text" class="form-input" name="name" placeholder="Harare Central Ambulance" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Type *</label>
+                            <select class="form-select" name="type" required>
+                                <option value="">Select type</option>
+                                <option value="AMBULANCE">Ambulance</option>
+                                <option value="HOSPITAL">Hospital Emergency</option>
+                                <option value="CLINIC">Clinic</option>
+                                <option value="PARAMEDIC">Paramedic Unit</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Phone *</label>
+                                <input type="tel" class="form-input" name="phone" placeholder="0771234567" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email *</label>
+                                <input type="email" class="form-input" name="email" placeholder="dispatch@email.com" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Login Password *</label>
+                            <input type="password" class="form-input" name="password" placeholder="Create password" required>
+                            <small style="color: #666;">Dispatch unit will use this to login</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Address *</label>
+                            <input type="text" class="form-input" name="address" placeholder="123 Main St, Harare" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">📍 GPS Coordinates *</label>
+                            <small style="color: #666; display: block; margin-bottom: 8px;">Right-click on Google Maps > Copy coordinates (lat, lng)</small>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <input type="number" class="form-input" name="lat" placeholder="Latitude" step="0.0001" required>
+                                </div>
+                                <div class="form-group">
+                                    <input type="number" class="form-input" name="lng" placeholder="Longitude" step="0.0001" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="getCurrentLocationForDispatch()">
+                                📍 Use Current Location
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Equipment Details</label>
+                            <textarea class="form-input" name="equipment" rows="3" placeholder="List available equipment, vehicles, etc."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('addDispatchModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="addDispatch()">Add Unit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Panel -->
+    <div id="notificationsPanel" class="notifications-panel">
+        <div class="notifications-header">
+            <h4>Notifications</h4>
+            <button onclick="closeNotifications()">×</button>
+        </div>
+        <div id="notificationsList" class="notifications-list"></div>
+    </div>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../shared/js/database.js"></script>
+    <script src="../shared/js/utils.js"></script>
+    <script src="js/admin.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/admin-dashboard/service-worker.js')
+                    .then((registration) => {
+                        console.log('[PWA] Service Worker registered:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('[PWA] Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

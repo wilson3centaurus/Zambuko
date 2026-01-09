@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zambuko Emergency Dispatch</title>
+    <link rel="stylesheet" href="../shared/css/common.css">
+    <link rel="stylesheet" href="css/dispatch.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#DC2626">
+</head>
+<body>
+    <!-- Auth Screen -->
+    <div id="authScreen" class="screen active">
+        <div class="auth-container">
+            <div class="logo-section">
+                <svg class="app-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#DC2626;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#B91C1C;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="100" cy="100" r="90" fill="url(#logoGradient)" opacity="0.1"/>
+                    <path d="M100 40 L100 100 M60 100 L140 100" stroke="url(#logoGradient)" stroke-width="12" stroke-linecap="round"/>
+                    <circle cx="100" cy="100" r="15" fill="url(#logoGradient)"/>
+                    <path d="M100 130 C80 150, 60 140, 60 120 M100 130 C120 150, 140 140, 140 120" 
+                          stroke="url(#logoGradient)" stroke-width="8" fill="none" stroke-linecap="round"/>
+                </svg>
+                <h1>Zambuko Emergency</h1>
+                <p>Dispatch & Ambulance Services</p>
+            </div>
+
+            <!-- Login Card -->
+            <div id="loginCard" class="auth-card">
+                <h2>Dispatch Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label>Email or Phone</label>
+                        <input type="text" class="form-input" id="loginIdentifier" placeholder="Enter you email or phone" required>
+                        <span class="input-hint" id="loginIdentifierHint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-danger">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="screen">
+        <!-- Header -->
+        <header class="app-header emergency-header">
+            <div class="header-left">
+                <svg class="header-logo" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="18" fill="#DC2626" opacity="0.1"/>
+                    <path d="M20 10 L20 20 M12 20 L28 20" stroke="#DC2626" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="20" cy="20" r="3" fill="#DC2626"/>
+                </svg>
+                <div>
+                    <h3 id="dispatchName">Dispatch Unit</h3>
+                    <p class="unit-id" id="unitId">DISP-001</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-toggle" id="statusToggle" onclick="toggleStatus()">
+                    <span id="statusText">OFFLINE</span>
+                </div>
+                <button class="nav-item" onclick="logout()">
+                <span class="nav-icon">↩</span>
+                <span class="nav-label">Logout</span>
+            </button>
+            </div>
+        </header>
+
+        <!-- Emergency Alerts Section -->
+        <div class="alerts-section" id="alertsSection">
+            <div class="emergency-alert" style="display: none;">
+                <div class="alert-pulse"></div>
+                <span>🚨 New Emergency Alert</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card emergency-card">
+                    <div class="stat-icon">🚨</div>
+                    <div class="stat-content">
+                        <h3 id="activeEmergencies">0</h3>
+                        <p>Active Emergencies</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✓</div>
+                    <div class="stat-content">
+                        <h3 id="completedToday">0</h3>
+                        <p>Completed Today</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-content">
+                        <h3 id="avgResponseTime">0 min</h3>
+                        <p>Avg Response Time</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Requests List -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Emergency Requests</h2>
+                    <button class="btn-secondary" onclick="refreshEmergencies()">
+                        <span>🔄</span> Refresh
+                    </button>
+                </div>
+                <div id="emergenciesList" class="emergencies-list">
+                    <div class="empty-state">
+                        <p>No active emergencies</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response History -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>Response History</h2>
+                </div>
+                <div id="historyList" class="history-list">
+                    <div class="empty-state">
+                        <p>No history available</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Detail Modal -->
+        <div id="emergencyModal" class="modal">
+            <div class="modal-content emergency-modal">
+                <div class="modal-header">
+                    <h2>Emergency Details</h2>
+                    <button class="close-btn" onclick="closeEmergencyModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="emergencyDetails">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Scripts -->
+    <script src="../shared/js/database.js"></script>
+    <script src="js/dispatch.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/dispatch-app/service-worker.js')
+                    .then((registration) => {
+                        console.log('[PWA] Service Worker registered:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('[PWA] Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

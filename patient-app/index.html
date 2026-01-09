@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0D9488">
+    <meta name="description" content="Zambuko Patient App - Access healthcare anywhere">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="../shared/icons/icon-192.png">
+    <title>Zambuko - Patient</title>
+    <link rel="stylesheet" href="../shared/css/common.css">
+    <link rel="stylesheet" href="css/patient.css">
+</head>
+<body>
+    <!-- Auth Screen (Login/Register) -->
+    <div id="authScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-logo">
+                <img src="../shared/img/zambuko-logo.svg" alt="Zambuko" style="height: 60px; margin-bottom: 8px;">
+                <p>Healthcare at your fingertips</p>
+            </div>
+            
+            <!-- Login Form -->
+            <div class="login-card" id="loginCard">
+                <h2>Patient Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email or Phone</label>
+                        <input type="text" class="form-input" id="loginIdentifier" placeholder="email@example.com or 0771234567" required>
+                        <span class="input-hint" id="loginIdentifierHint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+                <p style="text-align: center; margin-top: 16px; color: #666;">
+                    Don't have an account? <a href="#" onclick="showRegisterForm()" style="color: var(--primary); font-weight: 500;">Register</a>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div class="login-card" id="registerCard" style="display: none;">
+                <h2>Create Account</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="regName" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="regEmail" placeholder="email@example.com" required>
+                        <span class="input-hint" id="regEmailHint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="regPhone" placeholder="0771234567" required>
+                        <span class="input-hint" id="regPhoneHint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="regPassword" placeholder="Minimum 6 characters" required>
+                        <span class="input-hint" id="regPasswordHint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-input" id="regConfirmPassword" placeholder="Confirm password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                </form>
+                <p style="text-align: center; margin-top: 16px; color: #666;">
+                    Already have an account? <a href="#" onclick="showLoginForm()" style="color: var(--primary); font-weight: 500;">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="screen">
+        <div class="app-container">
+            <!-- Header -->
+            <header class="header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="../shared/img/zambuko-icon.svg" alt="Zambuko" style="height: 32px;">
+                    <div>
+                        <h1>Good day</h1>
+                        <h2 id="userName" style="font-size: 1rem;">Patient</h2>
+                    </div>
+                </div>
+                <div class="header-location" onclick="requestLocationAccess()">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            <span class="location-text" id="headerLocation">Enable location</span>
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;"><path d="M7 10l5 5 5-5z"/></svg>
+                        </div>
+                <div class="header-icon" onclick="showProfile()">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+            </header>
+
+            <!-- Home View -->
+            <div id="homeView" class="view active">
+                <div class="content">
+                    <!-- Emergency Banner -->
+                    <div class="emergency-banner" onclick="showEmergencyModal()">
+                        <span class="pulse">🚨</span>
+                        <div>
+                            <strong>Emergency?</strong>
+                            <p>Tap here for immediate help</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <h3 style="margin-bottom: 12px;">Quick Actions</h3>
+                    <div class="quick-actions">
+                        <button class="quick-action" onclick="navigateTo('triageView')">
+                            <div class="quick-action-icon triage">🩺</div>
+                            <span>Symptom Check</span>
+                        </button>
+                        <button class="quick-action" onclick="navigateTo('doctorsView')">
+                            <div class="quick-action-icon consult">👨‍⚕️</div>
+                            <span>Find Doctor</span>
+                        </button>
+                        <button class="quick-action" onclick="navigateTo('historyView')">
+                            <div class="quick-action-icon history">📋</div>
+                            <span>My History</span>
+                        </button>
+                        <button class="quick-action" onclick="navigateTo('pharmacyView')">
+                            <div class="quick-action-icon pharmacy">💊</div>
+                            <span>Pharmacy</span>
+                        </button>
+                    </div>
+
+                    <!-- Available Doctors Preview -->
+                    <div class="card" style="margin-top: 24px;">
+                        <div class="card-header">
+                            <h3 class="card-title">Available Now</h3>
+                            <a href="#" onclick="navigateTo('doctorsView')" style="color: var(--primary); text-decoration: none; font-size: 0.9rem;">See All</a>
+                        </div>
+                        <div id="availableDoctorsPreview">
+                            <div class="empty-state" style="padding: 20px;">
+                                <p>Loading doctors...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Triage View -->
+            <div id="triageView" class="view">
+                <div class="content">
+                    <button class="back-btn" onclick="navigateTo('homeView')">← Back</button>
+                    <h2 style="margin: 16px 0;">Symptom Checker</h2>
+                    <p style="color: var(--gray); margin-bottom: 20px;">Select your symptoms for AI-powered triage</p>
+
+                    <div class="form-group">
+                        <label class="form-label">Your Age</label>
+                        <input type="number" class="form-input" id="patientAge" placeholder="Enter your age" value="30">
+                    </div>
+
+                    <label class="form-label">Select Symptoms</label>
+                    <div class="symptom-tags" id="symptomTags"></div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label">Other symptoms (optional)</label>
+                        <input type="text" class="form-input" id="otherSymptoms" placeholder="Describe other symptoms">
+                    </div>
+
+                    <div id="triageResult" style="display: none;"></div>
+
+                    <button class="btn btn-primary btn-block" onclick="performTriageCheck()">
+                        Check Symptoms
+                    </button>
+                </div>
+            </div>
+
+            <!-- Doctors View -->
+            <div id="doctorsView" class="view">
+                <div class="content">
+                    <button class="back-btn" onclick="navigateTo('homeView')">← Back</button>
+                    <h2 style="margin: 16px 0;">Find a Doctor</h2>
+
+                    <!-- Real-time status indicator -->
+                    <div class="realtime-indicator">
+                        <span class="pulse-dot"></span>
+                        <span>Live availability</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Specialty</label>
+                        <select class="form-select" id="specialtyFilter" onchange="filterDoctors()">
+                            <option value="">All Specialties</option>
+                            <option value="General Practice">General Practice</option>
+                            <option value="Pediatrics">Pediatrics</option>
+                            <option value="Cardiology">Cardiology</option>
+                            <option value="Dermatology">Dermatology</option>
+                            <option value="Psychiatry">Psychiatry</option>
+                        </select>
+                    </div>
+
+                    <div id="doctorsList"></div>
+                </div>
+            </div>
+
+            <!-- Doctor Profile View -->
+            <div id="doctorProfileView" class="view">
+                <div class="content">
+                    <button class="back-btn" onclick="navigateTo('doctorsView')">← Back</button>
+                    <div id="doctorProfileContent"></div>
+                </div>
+            </div>
+
+            <!-- Payment View -->
+            <div id="paymentView" class="view">
+                <div class="content">
+                    <button class="back-btn" onclick="navigateTo('doctorProfileView')">← Back</button>
+                    <h2 style="margin: 16px 0;">Payment</h2>
+                    
+                    <div class="card">
+                        <h4 style="margin-bottom: 8px;">Consultation Fee</h4>
+                        <p class="consultation-fee" id="consultationFee">$5.00 USD</p>
+                    </div>
+
+                    <h4 style="margin: 20px 0 12px;">Select Payment Method</h4>
+                    
+                    <div class="payment-option selected" data-method="ecocash" onclick="selectPayment(this)">
+                        <div class="payment-logo" style="background: #00A651; color: white;">ECO</div>
+                        <div>
+                            <strong>EcoCash</strong>
+                            <p style="font-size: 0.85rem; color: var(--gray);">Pay with EcoCash mobile money</p>
+                        </div>
+                    </div>
+
+                    <div class="payment-option" data-method="onemoney" onclick="selectPayment(this)">
+                        <div class="payment-logo" style="background: #E31837; color: white;">ONE</div>
+                        <div>
+                            <strong>OneMoney</strong>
+                            <p style="font-size: 0.85rem; color: var(--gray);">Pay with OneMoney</p>
+                        </div>
+                    </div>
+
+                    <div class="payment-option" data-method="telecash" onclick="selectPayment(this)">
+                        <div class="payment-logo" style="background: #0072BC; color: white;">TEL</div>
+                        <div>
+                            <strong>Telecash</strong>
+                            <p style="font-size: 0.85rem; color: var(--gray);">Pay with Telecash</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="paymentPhone" placeholder="0771234567">
+                    </div>
+
+                    <button class="btn btn-primary btn-block" onclick="processPaymentFlow()">
+                        Pay Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Consultation View -->
+            <div id="consultationView" class="view">
+                <div class="content" style="padding: 0;">
+                    <div class="video-container" id="videoContainer">
+                        <div class="video-placeholder">
+                            <div id="consultationDoctorInfo"></div>
+                            <p style="color: #ccc; margin-top: 20px;">Connecting to doctor...</p>
+                            <div class="spinner" style="margin: 20px auto;"></div>
+                        </div>
+                        <div class="video-controls">
+                            <button class="video-btn video-btn-mute" onclick="toggleMute()">🎤</button>
+                            <button class="video-btn video-btn-mute" onclick="toggleVideo()">📹</button>
+                            <button class="video-btn video-btn-end" onclick="endConsultation()">📞</button>
+                            <button class="video-btn video-btn-mute" onclick="toggleChat()">💬</button>
+                        </div>
+                    </div>
+                    <!-- Real-time Chat Panel -->
+                    <div id="consultationChat" class="chat-panel">
+                        <div class="chat-header">
+                            <span>Chat with Doctor</span>
+                            <button class="btn btn-sm" onclick="toggleChat()">×</button>
+                        </div>
+                        <div class="chat-messages" id="chatMessages"></div>
+                        <div class="chat-input-area">
+                            <input type="text" class="form-input" id="chatInput" placeholder="Type a message..." onkeypress="handleChatKeypress(event)">
+                            <button class="btn btn-primary" onclick="sendChatMessage()">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History View -->
+            <div id="historyView" class="view">
+                <div class="content">
+                    <button class="back-btn" onclick="navigateTo('homeView')">← Back</button>
+                    <h2 style="margin: 16px 0;">Consultation History</h2>
+                    <div id="consultationHistory">
+                        <div class="empty-state">
+                            <p>No consultations yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pharmacy View -->
+            <div id="pharmacyView" class="view">
+                <div class="content">
+                    <button class="back-btn" onclick="navigateTo('homeView')">← Back</button>
+                    <h2 style="margin: 16px 0;">E-Prescriptions</h2>
+                    <div id="prescriptionsList">
+                        <div class="empty-state">
+                            <p>No prescriptions yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <a class="nav-item active" onclick="navigateTo('homeView')">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                    <span>Home</span>
+                </a>
+                <a class="nav-item" onclick="navigateTo('doctorsView')">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                    </svg>
+                    <span>Doctors</span>
+                </a>
+                <a class="nav-item" onclick="navigateTo('historyView')">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                    </svg>
+                    <span>History</span>
+                </a>
+                <a class="nav-item" onclick="showProfile()">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    <span>Profile</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Emergency Modal (Enhanced with dropdown + GPS) -->
+    <div id="emergencyModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header" style="background: var(--danger); color: white;">
+                <h3 class="modal-title">🚨 Emergency Dispatch</h3>
+                <button class="modal-close" onclick="closeEmergencyModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px;">We will dispatch the nearest emergency responder to your location.</p>
+                
+                <div class="form-group">
+                    <label class="form-label">Type of Emergency</label>
+                    <select class="form-select" id="emergencyType" required>
+                        <option value="">Select emergency type...</option>
+                        <option value="chest_pain">🫀 Chest Pain / Heart Attack</option>
+                        <option value="breathing">🫁 Difficulty Breathing</option>
+                        <option value="unconscious">😵 Person Unconscious</option>
+                        <option value="severe_bleeding">🩸 Severe Bleeding</option>
+                        <option value="stroke">🧠 Stroke Symptoms</option>
+                        <option value="accident">🚗 Accident / Injury</option>
+                        <option value="seizure">⚡ Seizure / Convulsions</option>
+                        <option value="allergic">🤧 Severe Allergic Reaction</option>
+                        <option value="poisoning">☠️ Poisoning / Overdose</option>
+                        <option value="burn">🔥 Severe Burns</option>
+                        <option value="childbirth">👶 Childbirth / Labor</option>
+                        <option value="other">❓ Other Emergency</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Additional Information</label>
+                    <textarea class="form-input" id="emergencyDescription" rows="2" placeholder="Any additional details..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Your Location</label>
+                    <div class="location-box" id="locationBox">
+                        <span id="locationStatus">📍 Getting your location...</span>
+                        <button class="btn btn-sm btn-secondary" onclick="getEmergencyLocation()">Refresh</button>
+                    </div>
+                </div>
+
+                <div id="emergencyStatus" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEmergencyModal()">Cancel</button>
+                <button class="btn btn-danger" id="dispatchBtn" onclick="dispatchEmergencyNow()">
+                    🚑 Dispatch Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">My Profile</h3>
+                <button class="modal-close" onclick="closeProfileModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="profileContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger btn-block" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="modal-overlay" style="background: rgba(255,255,255,0.9);">
+        <div style="text-align: center;">
+            <div class="spinner"></div>
+            <p id="loadingText" style="margin-top: 16px; color: var(--dark);">Processing...</p>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="../shared/js/database.js"></script>
+    <script src="../shared/js/utils.js"></script>
+    <script src="js/patient.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/patient-app/service-worker.js')
+                    .then((registration) => {
+                        console.log('[PWA] Service Worker registered:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('[PWA] Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0D9488">
+    <meta name="description" content="Zambuko Doctor App - Provide healthcare anywhere">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="../shared/img/zambuko-icon.svg">
+    <title>Zambuko - Doctor</title>
+    <link rel="stylesheet" href="../shared/css/common.css">
+    <link rel="stylesheet" href="css/doctor.css">
+</head>
+<body>
+    <!-- Auth Screen (Login/Register) -->
+    <div id="authScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-logo">
+                <img src="../shared/img/zambuko-logo.svg" alt="Zambuko" style="height: 60px; margin-bottom: 8px;">
+            </div>
+            
+            <!-- Login Form -->
+            <div class="login-card" id="loginCard">
+                <h2>Doctor Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email or Phone</label>
+                        <input type="text" class="form-input" id="loginIdentifier" placeholder="email@example.com or 0771234567" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+                <p style="text-align: center; margin-top: 16px; color: #666;">
+                    New doctor? <a href="#" onclick="showRegisterForm()" style="color: var(--primary); font-weight: 500;">Register</a>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div class="login-card" id="registerCard" style="display: none;">
+                <h2>Doctor Registration</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label class="form-label">Full Name (Dr.)</label>
+                        <input type="text" class="form-input" id="regName" placeholder="Dr. John Moyo" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="regEmail" placeholder="doctor@email.com" required>
+                        <span class="input-hint" id="regEmailHint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="regPhone" placeholder="0771234567" required>
+                        <span class="input-hint" id="regPhoneHint"></span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Specialty</label>
+                        <select class="form-select" id="regSpecialty" required>
+                            <option value="General Practice">General Practice</option>
+                            <option value="Pediatrics">Pediatrics</option>
+                            <option value="Cardiology">Cardiology</option>
+                            <option value="Dermatology">Dermatology</option>
+                            <option value="Psychiatry">Psychiatry</option>
+                            <option value="Obstetrics">Obstetrics & Gynecology</option>
+                            <option value="Surgery">General Surgery</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="regPassword" placeholder="Minimum 6 characters" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-input" id="regConfirmPassword" placeholder="Confirm password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Register</button>
+                </form>
+                <p style="text-align: center; margin-top: 16px; color: #666;">
+                    Already registered? <a href="#" onclick="showLoginForm()" style="color: var(--primary); font-weight: 500;">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="screen">
+        <div class="app-container">
+            <!-- Header -->
+            <header class="header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="../shared/img/zambuko-icon.svg" alt="Zambuko" style="height: 32px;">
+                    <div>
+                        <div class="header-location" onclick="requestLocationAccess()">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            <span class="location-text" id="headerLocation">Enable location</span>
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;"><path d="M7 10l5 5 5-5z"/></svg>
+                        </div>
+                        <h1 id="doctorName" style="font-size: 1rem;">Doctor</h1>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div id="statusToggle" class="status-toggle available" onclick="toggleStatus()">
+                        <span class="status-dot"></span>
+                        <span id="statusText">Available</span>
+                    </div>
+                    <div class="header-icon" onclick="showSettings()">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                        </svg>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="view active">
+                <div class="content">
+                    <!-- Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="todayConsults">0</div>
+                            <div class="stat-label">Today's Consults</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="queueCount">0</div>
+                            <div class="stat-label">In Queue</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalEarnings">$0</div>
+                            <div class="stat-label">Today's Earnings</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="avgRating">-</div>
+                            <div class="stat-label">Avg Rating</div>
+                        </div>
+                    </div>
+
+                    <!-- Incoming Requests -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">🔔 Incoming Requests</h3>
+                            <span class="badge badge-available" id="requestCount">0</span>
+                        </div>
+                        <div id="incomingRequests">
+                            <div class="empty-state">
+                                <p>No pending requests</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Schedule -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📅 Today's Schedule</h3>
+                        </div>
+                        <div id="todaySchedule">
+                            <div class="empty-state">
+                                <p>No scheduled appointments</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Queue View -->
+            <div id="queueView" class="view">
+                <div class="content">
+                    <h2 style="margin-bottom: 16px;">Patient Queue</h2>
+                    <div id="patientQueue">
+                        <div class="empty-state">
+                            <p>Queue is empty</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consultation View -->
+            <div id="consultationView" class="view">
+                <div class="content" style="padding: 0;">
+                    <div class="video-container" id="videoContainer">
+                        <div class="video-placeholder">
+                            <div id="patientInfo"></div>
+                            <p style="color: #ccc; margin-top: 20px;">Connecting to patient...</p>
+                            <div class="spinner" style="margin: 20px auto;"></div>
+                        </div>
+                        <div class="video-controls">
+                            <button class="video-btn video-btn-mute" onclick="toggleMute()">🎤</button>
+                            <button class="video-btn video-btn-mute" onclick="toggleVideo()">📹</button>
+                            <button class="video-btn video-btn-end" onclick="endConsultation()">📞</button>
+                            <button class="video-btn video-btn-mute" onclick="openChat()">💬</button>
+                            <button class="video-btn video-btn-mute" onclick="openNotes()">📝</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Patient Details Panel -->
+                    <div class="patient-panel" id="patientPanel">
+                        <div class="patient-panel-header">
+                            <h4>Patient Details</h4>
+                            <button class="modal-close" onclick="closePatientPanel()">×</button>
+                        </div>
+                        <div id="patientDetails"></div>
+                    </div>
+
+                    <!-- Chat Panel -->
+                    <div id="consultationChat" class="chat-panel">
+                        <div class="chat-messages" id="chatMessages"></div>
+                        <div class="chat-input-area">
+                            <input type="text" class="form-input" id="chatInput" placeholder="Type a message...">
+                            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                        </div>
+                    </div>
+
+                    <!-- Notes Panel -->
+                    <div id="notesPanel" class="notes-panel">
+                        <div class="notes-header">
+                            <h4>Consultation Notes</h4>
+                            <button class="modal-close" onclick="closeNotes()">×</button>
+                        </div>
+                        <textarea id="consultationNotes" class="form-input" rows="6" placeholder="Enter consultation notes..."></textarea>
+                        <button class="btn btn-primary btn-block" onclick="saveNotes()" style="margin-top: 12px;">Save Notes</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescription View -->
+            <div id="prescriptionView" class="view">
+                <div class="content">
+                    <button class="back-btn" onclick="navigateTo('dashboardView')">← Back</button>
+                    <h2 style="margin: 16px 0;">Write Prescription</h2>
+                    
+                    <div class="card">
+                        <h4>Patient: <span id="rxPatientName">-</span></h4>
+                        <p style="color: var(--gray);">Consultation ID: <span id="rxConsultId">-</span></p>
+                    </div>
+
+                    <div id="medicationList">
+                        <div class="medication-item">
+                            <div class="form-group">
+                                <label class="form-label">Medication Name</label>
+                                <input type="text" class="form-input med-name" placeholder="e.g., Paracetamol 500mg">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Dosage Instructions</label>
+                                <input type="text" class="form-input med-dosage" placeholder="e.g., 2 tablets, 3 times daily">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Duration</label>
+                                <input type="text" class="form-input med-duration" placeholder="e.g., 5 days">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-outline btn-block" onclick="addMedication()">
+                        + Add Another Medication
+                    </button>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label">Additional Notes</label>
+                        <textarea class="form-input" id="rxNotes" rows="3" placeholder="Any additional instructions for the patient..."></textarea>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" onclick="submitPrescription()">
+                        Send Prescription
+                    </button>
+                </div>
+            </div>
+
+            <!-- History View -->
+            <div id="historyView" class="view">
+                <div class="content">
+                    <h2 style="margin-bottom: 16px;">Consultation History</h2>
+                    <div id="consultHistory">
+                        <div class="empty-state">
+                            <p>No consultations yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earnings View -->
+            <div id="earningsView" class="view">
+                <div class="content">
+                    <h2 style="margin-bottom: 16px;">Earnings</h2>
+                    
+                    <div class="earnings-summary">
+                        <div class="earnings-card">
+                            <span>Today</span>
+                            <strong id="earningsToday">$0.00</strong>
+                        </div>
+                        <div class="earnings-card">
+                            <span>This Week</span>
+                            <strong id="earningsWeek">$0.00</strong>
+                        </div>
+                        <div class="earnings-card">
+                            <span>This Month</span>
+                            <strong id="earningsMonth">$0.00</strong>
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin-top: 20px;">
+                        <h4 style="margin-bottom: 12px;">Transaction History</h4>
+                        <div id="transactionHistory">
+                            <div class="empty-state">
+                                <p>No transactions yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <a class="nav-item active" onclick="navigateTo('dashboardView')">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item" onclick="navigateTo('queueView')">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                    </svg>
+                    <span>Queue</span>
+                </a>
+                <a class="nav-item" onclick="navigateTo('historyView')">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                    </svg>
+                    <span>History</span>
+                </a>
+                <a class="nav-item" onclick="navigateTo('earningsView')">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                    </svg>
+                    <span>Earnings</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Settings</h3>
+                <button class="modal-close" onclick="closeSettings()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="doctorProfileContent"></div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label class="form-label">Availability Status</label>
+                    <select class="form-select" id="statusSelect" onchange="updateStatus()">
+                        <option value="AVAILABLE">Available</option>
+                        <option value="IN_SESSION">In Session</option>
+                        <option value="OFFLINE">Offline</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Emergency Capable</label>
+                    <select class="form-select" id="emergencyCapable">
+                        <option value="true">Yes - Accept emergency cases</option>
+                        <option value="false">No - Regular consultations only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger btn-block" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accept Request Modal -->
+    <div id="requestModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">New Consultation Request</h3>
+                <button class="modal-close" onclick="closeRequestModal()">×</button>
+            </div>
+            <div class="modal-body" id="requestDetails"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="declineRequest()">Decline</button>
+                <button class="btn btn-primary" onclick="acceptRequest()">Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="modal-overlay" style="background: rgba(255,255,255,0.9);">
+        <div style="text-align: center;">
+            <div class="spinner"></div>
+            <p id="loadingText" style="margin-top: 16px; color: var(--dark);">Processing...</p>
+        </div>
+    </div>
+
+    <script src="../shared/js/database.js"></script>
+    <script src="../shared/js/utils.js"></script>
+    <script src="js/doctor.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/doctor-app/service-worker.js')
+                    .then((registration) => {
+                        console.log('[PWA] Service Worker registered:', registration);
+                    })
+                    .catch((error) => {
+                        console.log('[PWA] Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0D9488">
+    <meta name="description" content="Zambuko - Telehealth Innovation for Zimbabwe">
+    <title>Zambuko - Telehealth Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0D9488 0%, #0F766E 50%, #115E59 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo img {
+            height: 80px;
+            margin-bottom: 10px;
+            filter: brightness(0) invert(1);
+        }
+
+        .logo h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .logo p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .app-card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            color: #1F2937;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .app-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .app-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .app-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: #0D9488;
+        }
+
+        .app-card p {
+            color: #6B7280;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .app-btn {
+            display: inline-block;
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+            color: white;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .app-card:hover .app-btn {
+            background: linear-gradient(135deg, #0F766E 0%, #115E59 100%);
+        }
+
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 32px;
+            margin-top: 60px;
+            max-width: 1000px;
+        }
+
+        .feature {
+            text-align: center;
+            max-width: 200px;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .feature h3 {
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .feature p {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        footer {
+            margin-top: 60px;
+            text-align: center;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .demo-note {
+            background: rgba(255,255,255,0.15);
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-top: 40px;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .demo-note h4 {
+            margin-bottom: 8px;
+        }
+
+        .demo-note code {
+            background: rgba(0,0,0,0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 640px) {
+            .logo h1 {
+                font-size: 2.5rem;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features {
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">
+        <img src="shared/img/zambuko-logo.svg" alt="Zambuko">
+        <p>Telehealth Innovation for Zimbabwe</p>
+    </div>
+
+    <div class="apps-grid">
+        <a href="patient-app/index.html" class="app-card">
+            <div class="app-icon">👤</div>
+            <h2>Patient App</h2>
+            <p>Access healthcare anywhere. Book consultations, check symptoms, and get prescriptions delivered.</p>
+            <span class="app-btn">Open Patient App</span>
+        </a>
+
+        <a href="doctor-app/index.html" class="app-card">
+            <div class="app-icon">👨‍⚕️</div>
+            <h2>Doctor App</h2>
+            <p>Manage consultations, issue prescriptions, and connect with patients remotely.</p>
+            <span class="app-btn">Open Doctor App</span>
+        </a>
+
+        <a href="admin-dashboard/index.html" class="app-card">
+            <div class="app-icon">⚙️</div>
+            <h2>Admin Dashboard</h2>
+            <p>Monitor platform analytics, manage doctors & patients, and configure system settings.</p>
+            <span class="app-btn">Open Admin Dashboard</span>
+        </a>
+    </div>
+
+    <div class="features">
+        <div class="feature">
+            <div class="feature-icon">🤖</div>
+            <h3>AI Triage</h3>
+            <p>Smart symptom analysis</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">📱</div>
+            <h3>Mobile Money</h3>
+            <p>EcoCash, OneMoney, Telecash</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">🚑</div>
+            <h3>Emergency Dispatch</h3>
+            <p>GPS-based responders</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">💊</div>
+            <h3>E-Prescriptions</h3>
+            <p>Pharmacy delivery</p>
+        </div>
+        <div class="feature">
+            <div class="feature-icon">📶</div>
+            <h3>Low Bandwidth</h3>
+            <p>Works on 2G/3G</p>
+        </div>
+    </div>
+
+    <div class="demo-note">
+        <h4>📋 Amdin Credentials</h4>
+        <p>
+            <strong>Admin:</strong> <code>admin@zambuko.co.zw</code> / <code>admin123</code>
+        </p>
+    </div>
+
+    <footer>
+        <p>© 2026 Zambuko Telehealth. Built with ❤️ for Zimbabwe.</p>
+    </footer>
+</body>
+</html>
