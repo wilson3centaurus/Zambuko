@@ -1,6 +1,6 @@
 {
   "name": "Zambuko Emergency Dispatch",
-  "short_name": "Zambuko Dispatch",
+  "short_name": "Zambuko Emergency",
   "description": "Emergency dispatch and ambulance services for Zambuko Health",
   "start_url": "./index.html",
   "display": "standalone",
