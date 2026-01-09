@@ -2,7 +2,7 @@
     "name": "Zambuko Doctor",
     "short_name": "Zambuko Doc",
     "description": "Zambuko telehealth doctor portal",
-    "start_url": "/index.html",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#0D9488",

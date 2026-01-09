@@ -2,7 +2,7 @@
     "name": "Zambuko Patient",
     "short_name": "Zambuko",
     "description": "Access healthcare anywhere with Zambuko telehealth",
-    "start_url": "/index.html",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#0D9488",
