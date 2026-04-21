@@ -1,0 +1,16 @@
+{
+  "name": "@zambuko/config",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared configuration for all Zambuko apps",
+  "exports": {
+    "./tailwind": "./tailwind/index.ts",
+    "./typescript/base": "./typescript/base.json",
+    "./typescript/nextjs": "./typescript/nextjs.json",
+    "./eslint": "./eslint/index.js"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.9",
+    "typescript": "^5.6.3"
+  }
+}

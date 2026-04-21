@@ -768,10 +768,38 @@ const ConsultationService = {
         return await ZambukoDB.getByIndex('consultations', 'doctorId', doctorId);
     },
 
-    // Get pending consultations for doctor
-    async getPendingForDoctor(doctorId) {
-        const all = await this.getDoctorConsultations(doctorId);
-        return all.filter(c => c.status === 'PENDING');
+    // Schedule consultation (doctor accepts and sets appointment time)
+    async scheduleConsultation(consultationId, doctorId, scheduledTime) {
+        const consultation = await ZambukoDB.get('consultations', consultationId);
+        if (!consultation) throw new Error('Consultation not found');
+        if (consultation.doctorId !== doctorId) throw new Error('Unauthorized');
+
+        consultation.status = 'SCHEDULED';
+        consultation.scheduledTime = scheduledTime;
+        consultation.acceptedAt = new Date().toISOString();
+        await ZambukoDB.put('consultations', consultation);
+
+        localStorage.setItem('zambuko_consultation_update', JSON.stringify({
+            consultation,
+            action: 'SCHEDULED',
+            timestamp: Date.now()
+        }));
+
+        return consultation;
+    },
+
+    // Get pending consultations for doctor (checks by user ID and optional profile ID)
+    async getPendingForDoctor(doctorUserId, doctorProfileId = null) {
+        const all = await this.getDoctorConsultations(doctorUserId);
+        let pending = all.filter(c => c.status === 'PENDING');
+
+        if (doctorProfileId && pending.length === 0) {
+            const byProfile = await this.getDoctorConsultations(doctorProfileId);
+            const extra = byProfile.filter(c => c.status === 'PENDING' && !pending.find(p => p.id === c.id));
+            pending = [...pending, ...extra];
+        }
+
+        return pending;
     }
 };
 

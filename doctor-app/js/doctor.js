@@ -443,7 +443,7 @@ async function loadDashboard() {
         document.getElementById('todayConsults').textContent = todayConsults.length;
         document.getElementById('queueCount').textContent = currentDoctorProfile?.queue || 0;
         document.getElementById('totalEarnings').textContent = '$' + (todayConsults.length * 4).toFixed(2);
-        document.getElementById('avgRating').textContent = '⭐ ' + (currentDoctorProfile?.rating || '5.0');
+        document.getElementById('avgRating').textContent = (currentDoctorProfile?.rating || '5.0') + ' / 5.0';
 
         loadIncomingRequests();
         loadSchedule();
@@ -457,7 +457,7 @@ async function loadIncomingRequests() {
     if (!container) return;
 
     try {
-        const pending = await ConsultationService.getPendingForDoctor(currentDoctor.id);
+        const pending = await ConsultationService.getPendingForDoctor(currentDoctor.id, currentDoctorProfile?.id);
         
         if (pending.length === 0) {
             container.innerHTML = `
@@ -507,6 +507,7 @@ async function showRequestDetails(consultationId) {
         const patient = await ZambukoDB.get('users', consultation.patientId);
         pendingRequest = { consultation, patient };
 
+        const minDateTime = new Date(Date.now() + 15 * 60000).toISOString().slice(0, 16);
         const details = document.getElementById('requestDetails');
         details.innerHTML = `
             <div style="text-align: center; margin-bottom: 20px;">
@@ -531,6 +532,12 @@ async function showRequestDetails(consultationId) {
                     <p>${new Date(consultation.createdAt).toLocaleString()}</p>
                 </div>
             </div>
+
+            <div class="card" style="margin-top: 12px;">
+                <h4 style="margin-bottom: 12px;">Set Appointment Time</h4>
+                <label style="font-size: 0.85rem; color: var(--gray); display: block; margin-bottom: 6px;">Choose date &amp; time for this appointment</label>
+                <input type="datetime-local" id="appointmentTime" class="form-input" min="${minDateTime}" style="width: 100%;">
+            </div>
         `;
 
         document.getElementById('requestModal').classList.add('active');
@@ -547,32 +554,31 @@ function closeRequestModal() {
 async function acceptRequest() {
     if (!pendingRequest) return;
 
+    const timeInput = document.getElementById('appointmentTime');
+    if (!timeInput || !timeInput.value) {
+        showToast('Please set an appointment time first', 'error');
+        return;
+    }
+
     try {
-        await ConsultationService.acceptConsultation(
+        const scheduled = await ConsultationService.scheduleConsultation(
             pendingRequest.consultation.id,
-            currentDoctor.id
+            currentDoctor.id,
+            timeInput.value
         );
 
-        currentConsultation = pendingRequest.consultation;
-        
-        // Update status to IN_SESSION
-        currentDoctorProfile.status = 'IN_SESSION';
-        await ZambukoDB.put('doctors', currentDoctorProfile);
-        await AvailabilityService.updateStatus(currentDoctor.id, 'IN_SESSION');
-        updateStatusUI();
-
+        currentConsultation = scheduled;
         closeRequestModal();
-        startConsultation();
-        showToast('Consultation accepted!', 'success');
+        loadDashboard();
+        showToast('Appointment confirmed for ' + new Date(timeInput.value).toLocaleString(), 'success');
     } catch (error) {
         showToast('Error accepting request: ' + error.message, 'error');
     }
 }
 
-async function declineRequest() {
-    // Just close modal for now
-    closeRequestModal();
-    showToast('Request declined', 'info');
+function declineRequest() {
+    // Declining disabled — patients may have already paid
+    showToast('Appointments cannot be declined once a patient has paid', 'info');
 }
 
 // ============ CONSULTATION ============
@@ -793,7 +799,7 @@ async function loadQueue() {
     if (!container) return;
 
     try {
-        const pending = await ConsultationService.getPendingForDoctor(currentDoctor.id);
+        const pending = await ConsultationService.getPendingForDoctor(currentDoctor.id, currentDoctorProfile?.id);
         
         if (pending.length === 0) {
             container.innerHTML = `
@@ -900,15 +906,72 @@ async function loadEarnings() {
 
 // ============ SCHEDULE ============
 
-function loadSchedule() {
+async function loadSchedule() {
     const container = document.getElementById('todaySchedule');
     if (!container) return;
-    
-    container.innerHTML = `
-        <div class="empty-state">
-            <p>No scheduled appointments today</p>
-        </div>
-    `;
+
+    try {
+        const all = await ConsultationService.getDoctorConsultations(currentDoctor.id);
+        const scheduled = all.filter(c => c.status === 'SCHEDULED');
+
+        if (scheduled.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <p>No scheduled appointments</p>
+                </div>
+            `;
+            return;
+        }
+
+        scheduled.sort((a, b) => new Date(a.scheduledTime) - new Date(b.scheduledTime));
+        container.innerHTML = '';
+
+        for (const appt of scheduled) {
+            const patient = await ZambukoDB.get('users', appt.patientId);
+            const apptTime = new Date(appt.scheduledTime);
+            container.innerHTML += `
+                <div class="card" style="margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
+                    <div style="background: var(--primary); color: white; border-radius: 8px; padding: 8px 12px; text-align: center; min-width: 56px; flex-shrink: 0;">
+                        <div style="font-size: 0.7rem;">${apptTime.toLocaleDateString([], {month:'short', day:'numeric'})}</div>
+                        <div style="font-size: 0.95rem; font-weight: 700;">${apptTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <strong>${patient?.fullName || 'Patient'}</strong>
+                        <p style="font-size: 0.82rem; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${appt.symptoms || 'General consultation'}</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="startScheduledConsultation('${appt.id}')">Start</button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>No scheduled appointments</p>
+            </div>
+        `;
+    }
+}
+
+async function startScheduledConsultation(consultationId) {
+    try {
+        const consultation = await ZambukoDB.get('consultations', consultationId);
+        if (!consultation) return;
+
+        currentConsultation = consultation;
+
+        // Move status from SCHEDULED → IN_SESSION and notify patient
+        await ConsultationService.acceptConsultation(consultationId, currentDoctor.id);
+
+        // Update doctor status
+        currentDoctorProfile.status = 'IN_SESSION';
+        await ZambukoDB.put('doctors', currentDoctorProfile);
+        await AvailabilityService.updateStatus(currentDoctor.id, 'IN_SESSION');
+        updateStatusUI();
+
+        startConsultation();
+    } catch (error) {
+        showToast('Error starting consultation: ' + error.message, 'error');
+    }
 }
 
 // ============ SETTINGS ============

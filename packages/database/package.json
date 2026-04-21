@@ -1,0 +1,20 @@
+{
+  "name": "@zambuko/database",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Supabase client, types, and query helpers for all Zambuko apps",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./types": "./src/types.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.46.1",
+    "@supabase/ssr": "^0.5.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.7.0"
+  }
+}

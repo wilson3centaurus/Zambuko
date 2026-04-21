@@ -14,9 +14,9 @@
 }
 
 .status-toggle.available {
-    background: rgba(35, 134, 54, 0.2);
-    color: #3fb950;
-    border-color: rgba(35, 134, 54, 0.4);
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.35);
 }
 
 .status-toggle.in-session {
@@ -55,7 +55,7 @@
     border-radius: var(--radius, 6px);
     padding: 16px;
     margin-bottom: 12px;
-    border-left: 3px solid var(--primary, #238636);
+    border-left: 3px solid var(--primary, #2563eb);
     cursor: pointer;
     transition: all 0.15s ease;
 }

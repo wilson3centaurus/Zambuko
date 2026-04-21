@@ -1,7 +1,7 @@
 {
-    "name": "Zambuko Doctor",
-    "short_name": "Zambuko Doc",
-    "description": "Zambuko telehealth doctor portal",
+    "name": "Hutano Doctor",
+    "short_name": "Hutano Doc",
+    "description": "Hutano Telehealth doctor portal",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#ffffff",

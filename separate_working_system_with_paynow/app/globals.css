@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-geist-sans: var(--geist-font-sans, ui-sans-serif);
+  --rc-bg-canvas: #0a0e1a;
+  --rc-bg-overlay: #111827;
+  --rc-bg-inset: #1e293b;
+  --rc-fg-default: #f1f5f9;
+  --rc-fg-muted: #94a3b8;
+  --rc-border: #1e293b;
+  --rc-accent: #3b82f6;
+}
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply text-gray-900 bg-gray-50;
+    font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  /* Admin area always dark */
+  .admin-canvas {
+    background: var(--rc-bg-canvas);
+    color: var(--rc-fg-default);
+    font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism card */
+  .glass {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Animate in from right */
+  .animate-in {
+    animation: slideInRight 0.25s ease-out;
+  }
+
+  @keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+}

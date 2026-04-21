@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0D9488">
-    <meta name="description" content="Zambuko Doctor App - Provide healthcare anywhere">
+    <meta name="description" content="Hutano Doctor App - Provide healthcare anywhere">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="../shared/img/zambuko-icon.svg">
-    <title>Zambuko - Doctor</title>
+    <title>Hutano - Doctor</title>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="../shared/css/common.css">
     <link rel="stylesheet" href="css/doctor.css">
 </head>
@@ -18,7 +20,7 @@
     <div id="authScreen" class="screen active">
         <div class="login-container">
             <div class="login-logo">
-                <img src="../shared/img/zambuko-logo.svg" alt="Zambuko" style="height: 60px; margin-bottom: 8px;">
+                <img src="../shared/img/zambuko-logo.svg" alt="Hutano" style="height: 60px; margin-bottom: 8px;">
             </div>
             
             <!-- Login Form -->
@@ -93,7 +95,7 @@
             <!-- Header -->
             <header class="header">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <img src="../shared/img/zambuko-icon.svg" alt="Zambuko" style="height: 32px;">
+                    <img src="../shared/img/zambuko-icon.svg" alt="Hutano" style="height: 32px;">
                     <div>
                         <div class="header-location" onclick="requestLocationAccess()">
                             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
@@ -142,7 +144,7 @@
                     <!-- Incoming Requests -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">🔔 Incoming Requests</h3>
+                            <h3 class="card-title"><i data-lucide="bell" style="width:16px;height:16px;"></i> Incoming Requests</h3>
                             <span class="badge badge-available" id="requestCount">0</span>
                         </div>
                         <div id="incomingRequests">
@@ -155,7 +157,7 @@
                     <!-- Today's Schedule -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">📅 Today's Schedule</h3>
+                            <h3 class="card-title"><i data-lucide="calendar" style="width:16px;height:16px;"></i> Today's Schedule</h3>
                         </div>
                         <div id="todaySchedule">
                             <div class="empty-state">
@@ -188,11 +190,11 @@
                             <div class="spinner" style="margin: 20px auto;"></div>
                         </div>
                         <div class="video-controls">
-                            <button class="video-btn video-btn-mute" onclick="toggleMute()">🎤</button>
-                            <button class="video-btn video-btn-mute" onclick="toggleVideo()">📹</button>
-                            <button class="video-btn video-btn-end" onclick="endConsultation()">📞</button>
-                            <button class="video-btn video-btn-mute" onclick="openChat()">💬</button>
-                            <button class="video-btn video-btn-mute" onclick="openNotes()">📝</button>
+                            <button class="video-btn video-btn-mute" onclick="toggleMute()"><i data-lucide="mic"></i></button>
+                            <button class="video-btn video-btn-mute" onclick="toggleVideo()"><i data-lucide="video"></i></button>
+                            <button class="video-btn video-btn-end" onclick="endConsultation()"><i data-lucide="phone-off"></i></button>
+                            <button class="video-btn video-btn-mute" onclick="openChat()"><i data-lucide="message-circle"></i></button>
+                            <button class="video-btn video-btn-mute" onclick="openNotes()"><i data-lucide="file-text"></i></button>
                         </div>
                     </div>
                     
@@ -382,8 +384,7 @@
             </div>
             <div class="modal-body" id="requestDetails"></div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="declineRequest()">Decline</button>
-                <button class="btn btn-primary" onclick="acceptRequest()">Accept</button>
+                <button class="btn btn-primary" style="width: 100%;" onclick="acceptRequest()">✓ Accept &amp; Schedule</button>
             </div>
         </div>
     </div>
@@ -399,6 +400,7 @@
     <script src="../shared/js/database.js"></script>
     <script src="../shared/js/utils.js"></script>
     <script src="js/doctor.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => lucide.createIcons());</script>
     
     <!-- PWA Service Worker Registration -->
     <script>

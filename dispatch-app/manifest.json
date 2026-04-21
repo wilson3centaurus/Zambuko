@@ -1,7 +1,7 @@
 {
-  "name": "Zambuko Emergency Dispatch",
-  "short_name": "Zambuko Emergency",
-  "description": "Emergency dispatch and ambulance services for Zambuko Health",
+  "name": "Hutano Emergency Dispatch",
+  "short_name": "Hutano Emergency",
+  "description": "Emergency dispatch and ambulance services for Hutano Health",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#DC2626",

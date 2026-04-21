@@ -1,0 +1,13 @@
+{
+  "name": "Connect WiFi",
+  "short_name": "Connect",
+  "description": "Fast, affordable internet access by Robokorda Africa",
+  "start_url": "/portal",
+  "display": "standalone",
+  "background_color": "#1e40af",
+  "theme_color": "#1e40af",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

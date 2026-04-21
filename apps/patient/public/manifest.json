@@ -1,0 +1,55 @@
+{
+  "name": "Hutano Patient",
+  "short_name": "Hutano",
+  "description": "Telehealth for Zimbabwe — consult doctors from anywhere",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#1d4ed8",
+  "theme_color": "#1d4ed8",
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "id": "com.zambuko.patient",
+  "categories": ["health", "medical"],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "icons": [
+    { "src": "/icons/icon-72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-96.png",   "sizes": "96x96",   "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-128.png",  "sizes": "128x128", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-144.png",  "sizes": "144x144", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-152.png",  "sizes": "152x152", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-192.png",  "sizes": "192x192", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-384.png",  "sizes": "384x384", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icons/icon-512.png",  "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Patient Dashboard"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Emergency",
+      "short_name": "SOS",
+      "description": "Request emergency ambulance",
+      "url": "/emergency",
+      "icons": [{ "src": "/icons/emergency-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Book Consultation",
+      "short_name": "Book",
+      "description": "Consult a doctor now",
+      "url": "/triage",
+      "icons": [{ "src": "/icons/consult-96.png", "sizes": "96x96" }]
+    }
+  ]
+}

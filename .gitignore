@@ -1,0 +1,46 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Next.js
+.next
+out
+dist
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Supabase local
+supabase/.branches
+supabase/.temp
+
+# Build outputs
+build
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor
+.vscode/settings.json
+.idea
+
+# Turbo cache
+.turbo
+
+# PWA generated files
+public/workbox-*.js
+public/sw.js
+public/worker-*.js
+
+# Test coverage
+coverage
+.nyc_output

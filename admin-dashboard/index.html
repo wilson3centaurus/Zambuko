@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0D9488">
-    <meta name="description" content="Zambuko Admin Dashboard - Manage your telehealth platform">
+    <meta name="description" content="Hutano Admin Dashboard - Manage your telehealth platform">
     <link rel="manifest" href="manifest.json">
-    <title>Zambuko - Admin Dashboard</title>
+    <title>Hutano - Admin Dashboard</title>
     <link rel="stylesheet" href="../shared/css/common.css">
     <link rel="stylesheet" href="css/admin.css">
 </head>
@@ -15,7 +15,7 @@
     <div id="loginScreen" class="screen active">
         <div class="login-container">
             <div class="login-logo">
-                <img src="../shared/img/zambuko-logo.svg" alt="Zambuko" style="height: 60px; margin-bottom: 8px;">
+                <img src="../shared/img/zambuko-logo.svg" alt="Hutano" style="height: 60px; margin-bottom: 8px;">
                 <p>Admin Dashboard</p>
             </div>
             <div class="login-card">
@@ -23,7 +23,7 @@
                 <form id="loginForm">
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-input" id="loginEmail" placeholder="admin@zambuko.co.zw" required>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="admin@hutano.co.zw" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Password</label>
@@ -32,7 +32,7 @@
                     <button type="submit" class="btn btn-primary btn-block">Login</button>
                 </form>
                 <p style="text-align: center; margin-top: 16px; color: #666;">
-                    Demo: admin@zambuko.co.zw / admin123
+                    Demo: admin@hutano.co.zw / admin123
                 </p>
             </div>
         </div>
@@ -44,44 +44,44 @@
             <!-- Sidebar -->
             <aside class="sidebar" id="sidebar">
                 <div class="sidebar-header">
-                    <img src="../shared/img/zambuko-icon.svg" alt="Zambuko" style="height: 40px;">
+                    <img src="../shared/img/zambuko-icon.svg" alt="Hutano" style="height: 40px;">
                     <span>Admin Panel</span>
                 </div>
                 <nav class="sidebar-nav">
                     <a class="sidebar-item active" onclick="navigateTo('dashboard')">
-                        <span class="sidebar-icon">📊</span>
+                        <i data-lucide="layout-dashboard" class="sidebar-icon"></i>
                         <span>Dashboard</span>
                     </a>
                     <a class="sidebar-item" onclick="navigateTo('doctors')">
-                        <span class="sidebar-icon">👨‍⚕️</span>
+                        <i data-lucide="stethoscope" class="sidebar-icon"></i>
                         <span>Doctors</span>
                     </a>
                     <a class="sidebar-item" onclick="navigateTo('patients')">
-                        <span class="sidebar-icon">👥</span>
+                        <i data-lucide="users" class="sidebar-icon"></i>
                         <span>Patients</span>
                     </a>
                     <a class="sidebar-item" onclick="navigateTo('consultations')">
-                        <span class="sidebar-icon">📋</span>
+                        <i data-lucide="clipboard-list" class="sidebar-icon"></i>
                         <span>Consultations</span>
                     </a>
                     <a class="sidebar-item" onclick="navigateTo('emergencies')">
-                        <span class="sidebar-icon">🚨</span>
+                        <i data-lucide="alert-triangle" class="sidebar-icon"></i>
                         <span>Emergency Requests</span>
                     </a>
                     <a class="sidebar-item" onclick="navigateTo('dispatches')">
-                        <span class="sidebar-icon">🚑</span>
+                        <i data-lucide="truck" class="sidebar-icon"></i>
                         <span>Ambulance Units</span>
                     </a>
                     <a class="sidebar-item" onclick="navigateTo('payments')">
-                        <span class="sidebar-icon">💰</span>
+                        <i data-lucide="credit-card" class="sidebar-icon"></i>
                         <span>Payments</span>
                     </a>
                     <a class="sidebar-item" onclick="navigateTo('analytics')">
-                        <span class="sidebar-icon">📈</span>
+                        <i data-lucide="bar-chart-2" class="sidebar-icon"></i>
                         <span>Analytics</span>
                     </a>
                     <a class="sidebar-item" onclick="navigateTo('settings')">
-                        <span class="sidebar-icon">⚙️</span>
+                        <i data-lucide="settings" class="sidebar-icon"></i>
                         <span>Settings</span>
                     </a>
                 </nav>
@@ -94,11 +94,11 @@
             <main class="main-content">
                 <!-- Top Bar -->
                 <header class="topbar">
-                    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+                    <button class="menu-toggle" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
                     <h1 id="pageTitle">Dashboard</h1>
                     <div class="topbar-right">
                         <div class="notification-bell" onclick="showNotifications()">
-                            🔔
+                            <i data-lucide="bell"></i>
                             <span class="notification-badge" id="notifBadge">3</span>
                         </div>
                         <div class="admin-profile">
@@ -114,7 +114,7 @@
                         <!-- Stats Cards -->
                         <div class="stats-row">
                             <div class="stat-card-lg">
-                                <div class="stat-icon doctors">👨‍⚕️</div>
+                                <div class="stat-icon doctors"><i data-lucide="stethoscope"></i></div>
                                 <div class="stat-info">
                                     <div class="stat-value" id="totalDoctors">0</div>
                                     <div class="stat-label">Total Doctors</div>
@@ -122,7 +122,7 @@
                                 </div>
                             </div>
                             <div class="stat-card-lg">
-                                <div class="stat-icon patients">👥</div>
+                                <div class="stat-icon patients"><i data-lucide="users"></i></div>
                                 <div class="stat-info">
                                     <div class="stat-value" id="totalPatients">0</div>
                                     <div class="stat-label">Total Patients</div>
@@ -130,7 +130,7 @@
                                 </div>
                             </div>
                             <div class="stat-card-lg">
-                                <div class="stat-icon consults">📋</div>
+                                <div class="stat-icon consults"><i data-lucide="clipboard-list"></i></div>
                                 <div class="stat-info">
                                     <div class="stat-value" id="totalConsults">0</div>
                                     <div class="stat-label">Consultations Today</div>
@@ -138,7 +138,7 @@
                                 </div>
                             </div>
                             <div class="stat-card-lg">
-                                <div class="stat-icon revenue">💰</div>
+                                <div class="stat-icon revenue"><i data-lucide="dollar-sign"></i></div>
                                 <div class="stat-info">
                                     <div class="stat-value" id="totalRevenue">$0</div>
                                     <div class="stat-label">Revenue Today</div>
@@ -184,7 +184,7 @@
                         <!-- Emergency Alerts -->
                         <div class="alerts-section">
                             <div class="card-header">
-                                <h3>🚨 Active Emergencies</h3>
+                                <h3><i data-lucide="alert-triangle" style="color:#ef4444;width:16px;height:16px;"></i> Active Emergencies</h3>
                             </div>
                             <div id="activeEmergencies"></div>
                         </div>
@@ -296,21 +296,21 @@
                     </div>
                     <div class="emergency-stats">
                         <div class="stat-card-lg emergency">
-                            <div class="stat-icon">🚑</div>
+                            <div class="stat-icon"><i data-lucide="truck"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="activeRespondersCount">0</div>
                                 <div class="stat-label">Active Responders</div>
                             </div>
                         </div>
                         <div class="stat-card-lg warning">
-                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-icon"><i data-lucide="clock"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="avgResponseTime">-</div>
                                 <div class="stat-label">Avg Response Time</div>
                             </div>
                         </div>
                         <div class="stat-card-lg success">
-                            <div class="stat-icon">✓</div>
+                            <div class="stat-icon"><i data-lucide="check-circle"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="resolvedToday">0</div>
                                 <div class="stat-label">Resolved Today</div>
@@ -342,21 +342,21 @@
                     </div>
                     <div class="payment-stats">
                         <div class="stat-card-lg">
-                            <div class="stat-icon revenue">💵</div>
+                            <div class="stat-icon revenue"><i data-lucide="dollar-sign"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="grossRevenue">$0</div>
                                 <div class="stat-label">Gross Revenue</div>
                             </div>
                         </div>
                         <div class="stat-card-lg">
-                            <div class="stat-icon">💳</div>
+                            <div class="stat-icon"><i data-lucide="credit-card"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="totalTransactions">0</div>
                                 <div class="stat-label">Transactions</div>
                             </div>
                         </div>
                         <div class="stat-card-lg">
-                            <div class="stat-icon">📊</div>
+                            <div class="stat-icon consults"><i data-lucide="bar-chart-2"></i></div>
                             <div class="stat-info">
                                 <div class="stat-value" id="avgTransaction">$0</div>
                                 <div class="stat-label">Avg Transaction</div>
@@ -390,7 +390,7 @@
                 <div id="analyticsView" class="view">
                     <div class="view-header">
                         <h2>Analytics & Reports</h2>
-                        <button class="btn btn-secondary" onclick="exportReport()">📥 Export Report</button>
+                        <button class="btn btn-secondary" onclick="exportReport()"><i data-lucide="download"></i> Export Report</button>
                     </div>
                     <div class="analytics-grid">
                         <div class="chart-card full-width">
@@ -481,7 +481,7 @@
                             <h3>General Settings</h3>
                             <div class="form-group">
                                 <label class="form-label">Platform Name</label>
-                                <input type="text" class="form-input" value="Zambuko Telehealth">
+                                <input type="text" class="form-input" value="Hutano Telehealth">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Default Consultation Fee (USD)</label>
@@ -662,7 +662,7 @@
                             <input type="text" class="form-input" name="address" placeholder="123 Main St, Harare" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">📍 GPS Coordinates *</label>
+                            <label class="form-label"><i data-lucide="map-pin" style="width:14px;height:14px;"></i> GPS Coordinates *</label>
                             <small style="color: #666; display: block; margin-bottom: 8px;">Right-click on Google Maps > Copy coordinates (lat, lng)</small>
                             <div class="form-row">
                                 <div class="form-group">
@@ -675,7 +675,7 @@
                         </div>
                         <div class="form-group">
                             <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="getCurrentLocationForDispatch()">
-                                📍 Use Current Location
+                                <i data-lucide="map-pin"></i> Use Current Location
                             </button>
                         </div>
                         <div class="form-group">
@@ -701,11 +701,14 @@
         <div id="notificationsList" class="notifications-list"></div>
     </div>
 
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../shared/js/database.js"></script>
     <script src="../shared/js/utils.js"></script>
     <script src="js/admin.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => lucide.createIcons());</script>
     
     <!-- PWA Service Worker Registration -->
     <script>

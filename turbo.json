@@ -1,0 +1,42 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "NODE_ENV",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_PATIENT_APP_URL",
+    "NEXT_PUBLIC_DOCTOR_APP_URL",
+    "NEXT_PUBLIC_ADMIN_APP_URL",
+    "NEXT_PUBLIC_DISPATCH_APP_URL",
+    "PAYNOW_INTEGRATION_ID",
+    "PAYNOW_INTEGRATION_KEY",
+    "OPENAI_API_KEY",
+    "LIVEKIT_API_KEY",
+    "LIVEKIT_API_SECRET",
+    "NEXT_PUBLIC_LIVEKIT_URL",
+    "NEXT_PUBLIC_MAPBOX_TOKEN",
+    "SENTRY_DSN"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "outputs": []
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

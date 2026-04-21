@@ -1,23 +1,24 @@
 /* Zambuko Common Styles */
 
 :root {
-    /* GitHub-inspired Professional Color Palette */
-    --primary: #238636;
-    --primary-dark: #1a7f37;
-    --primary-light: #2ea043;
-    --primary-gradient: linear-gradient(180deg, #238636 0%, #1a7f37 100%);
+    /* Zambuko Brand Color Palette */
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-light: #3b82f6;
+    --primary-gradient: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
     --header-gradient: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
     
-    --accent: #58a6ff;
-    --accent-dark: #388bfd;
+    --accent: #60a5fa;
+    --accent-dark: #3b82f6;
     
     --secondary: #f0883e;
-    --danger: #f85149;
-    --success: #238636;
-    --warning: #d29922;
-    --info: #58a6ff;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --success-dark: #16a34a;
+    --warning: #f59e0b;
+    --info: #60a5fa;
     
-    /* Neutral Colors - GitHub Dark */
+    /* Neutral Colors - Professional Dark */
     --dark: #0d1117;
     --dark-secondary: #161b22;
     --dark-tertiary: #21262d;
@@ -33,20 +34,22 @@
     --text-muted: #6e7681;
     
     /* Status Colors */
-    --emergency: #f85149;
-    --high: #f0883e;
-    --moderate: #d29922;
-    --low: #238636;
+    --emergency: #ef4444;
+    --high: #f97316;
+    --moderate: #f59e0b;
+    --low: #22c55e;
     
     /* Shadows & Effects */
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
     --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     
     /* Border Radius */
-    --radius: 6px;
-    --radius-sm: 4px;
-    --radius-lg: 12px;
+    --radius: 8px;
+    --radius-sm: 5px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
 }
 
 * {
@@ -186,6 +189,20 @@ body {
     color: var(--primary-light);
 }
 
+/* Lucide Icons — base sizing for all [data-lucide] elements */
+[data-lucide] {
+    display: inline-block;
+    width: 1.1em;
+    height: 1.1em;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: -0.15em;
+    flex-shrink: 0;
+}
+
 .nav-item span {
     font-size: 0.7rem;
     font-weight: 500;
@@ -246,6 +263,16 @@ body {
 
 .btn-primary:hover {
     background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+.btn-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
 }
 
 .btn-secondary {
@@ -315,8 +342,8 @@ body {
 
 .form-input:focus {
     outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 .form-input::placeholder {
@@ -336,8 +363,8 @@ body {
 
 .form-select:focus {
     outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 /* Status badges - GitHub Style */
@@ -353,9 +380,9 @@ body {
 }
 
 .badge-available {
-    background: rgba(35, 134, 54, 0.2);
-    color: #3fb950;
-    border-color: rgba(35, 134, 54, 0.4);
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.35);
 }
 
 .badge-busy, .badge-in-session {
@@ -389,9 +416,9 @@ body {
 }
 
 .badge-low {
-    background: rgba(35, 134, 54, 0.2);
-    color: #3fb950;
-    border-color: rgba(35, 134, 54, 0.4);
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.35);
 }
 
 /* Doctor cards - GitHub Style */
@@ -714,9 +741,9 @@ body {
 }
 
 .video-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -724,27 +751,34 @@ body {
     cursor: pointer;
     font-size: 1.1rem;
     transition: all 0.15s ease;
-    background: var(--dark-tertiary);
+    background: rgba(255,255,255,0.08);
     color: var(--text-primary);
+    backdrop-filter: blur(4px);
+}\n
+.video-btn [data-lucide] {
+    width: 20px;
+    height: 20px;
 }
 
 .video-btn:hover {
-    background: var(--light-gray);
+    background: rgba(255,255,255,0.15);
+    border-color: var(--gray-light);
 }
 
 .video-btn-mute {
-    background: var(--dark-tertiary);
+    background: rgba(255,255,255,0.08);
     color: var(--text-primary);
 }
 
 .video-btn-end {
     background: var(--danger);
     color: var(--white);
-    border-color: #da3633;
+    border-color: var(--danger);
 }
 
 .video-btn-end:hover {
-    background: #da3633;
+    background: #dc2626;
+    transform: scale(1.05);
 }
 
 /* Loading spinner */
@@ -995,27 +1029,32 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.quick-action-icon [data-lucide] {
+    width: 20px;
+    height: 20px;
 }
 
 .quick-action-icon.triage {
-    background: rgba(248, 81, 73, 0.15);
-    color: #f85149;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
 }
 
 .quick-action-icon.consult {
-    background: rgba(35, 134, 54, 0.15);
-    color: #3fb950;
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
 }
 
 .quick-action-icon.history {
-    background: rgba(88, 166, 255, 0.15);
-    color: #58a6ff;
+    background: rgba(37, 99, 235, 0.15);
+    color: #60a5fa;
 }
 
 .quick-action-icon.pharmacy {
-    background: rgba(210, 153, 34, 0.15);
-    color: #d29922;
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
 }
 
 .quick-action span {

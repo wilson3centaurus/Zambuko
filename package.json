@@ -1,0 +1,32 @@
+{
+  "name": "zambuko",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Zambuko Telehealth Platform — Production Monorepo",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "db:types": "supabase gen types typescript --local > packages/database/src/database.types.ts",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:seed": "supabase db seed",
+    "db:diff": "supabase db diff",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.6.3",
+    "@types/node": "^22.7.0",
+    "prettier": "^3.3.3",
+    "eslint": "^9.11.0"
+  },
+  "packageManager": "pnpm@9.12.1",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9.0.0"
+  }
+}

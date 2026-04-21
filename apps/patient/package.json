@@ -1,0 +1,52 @@
+{
+  "name": "@zambuko/patient-app",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next"
+  },
+  "dependencies": {
+    "@zambuko/database": "workspace:*",
+    "@zambuko/offline": "workspace:*",
+    "@zambuko/triage": "workspace:*",
+    "@zambuko/ui": "workspace:*",
+    "@supabase/supabase-js": "^2.46.1",
+    "@supabase/ssr": "^0.5.1",
+    "@tanstack/react-query": "^5.56.2",
+    "@tanstack/react-query-devtools": "^5.56.2",
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "sonner": "^1.5.0",
+    "dexie": "^4.0.8",
+    "dexie-react-hooks": "^1.1.7",
+    "mapbox-gl": "^3.7.0",
+    "react-map-gl": "^7.1.7",
+    "zustand": "^5.0.0",
+    "@livekit/components-react": "^2.6.5",
+    "livekit-client": "^2.5.2",
+    "react-hook-form": "^7.53.0",
+    "paynow": "^2.0.3",
+    "zod": "^3.23.8",
+    "@hookform/resolvers": "^3.9.0",
+    "date-fns": "^4.1.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.5.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.7.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/mapbox-gl": "^3.4.0",
+    "tailwindcss": "^3.4.13",
+    "postcss": "^8.4.47",
+    "autoprefixer": "^10.4.20"
+  }
+}

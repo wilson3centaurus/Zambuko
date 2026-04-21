@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0D9488">
-    <meta name="description" content="Zambuko - Telehealth Innovation for Zimbabwe">
-    <title>Zambuko - Telehealth Platform</title>
+    <meta name="description" content="Hutano - Telehealth Innovation for Zimbabwe">
+    <title>Hutano - Telehealth Platform</title>
     <style>
         * {
             margin: 0;
@@ -117,8 +117,20 @@
         }
 
         .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 12px;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+
+        .feature-icon [data-lucide] {
+            width: 28px;
+            height: 28px;
+            stroke: white;
         }
 
         .feature h3 {
@@ -175,7 +187,7 @@
 </head>
 <body>
     <div class="logo">
-        <img src="shared/img/zambuko-logo.svg" alt="Zambuko">
+        <img src="shared/img/zambuko-logo.svg" alt="Hutano">
         <p>Telehealth Innovation for Zimbabwe</p>
     </div>
 
@@ -204,41 +216,43 @@
 
     <div class="features">
         <div class="feature">
-            <div class="feature-icon">🤖</div>
+            <div class="feature-icon"><i data-lucide="cpu"></i></div>
             <h3>AI Triage</h3>
             <p>Smart symptom analysis</p>
         </div>
         <div class="feature">
-            <div class="feature-icon">📱</div>
+            <div class="feature-icon"><i data-lucide="smartphone"></i></div>
             <h3>Mobile Money</h3>
             <p>EcoCash, OneMoney, Telecash</p>
         </div>
         <div class="feature">
-            <div class="feature-icon">🚑</div>
+            <div class="feature-icon"><i data-lucide="truck"></i></div>
             <h3>Emergency Dispatch</h3>
             <p>GPS-based responders</p>
         </div>
         <div class="feature">
-            <div class="feature-icon">💊</div>
+            <div class="feature-icon"><i data-lucide="pill"></i></div>
             <h3>E-Prescriptions</h3>
             <p>Pharmacy delivery</p>
         </div>
         <div class="feature">
-            <div class="feature-icon">📶</div>
+            <div class="feature-icon"><i data-lucide="wifi"></i></div>
             <h3>Low Bandwidth</h3>
             <p>Works on 2G/3G</p>
         </div>
     </div>
 
     <div class="demo-note">
-        <h4>📋 Amdin Credentials</h4>
+        <h4>Admin Credentials</h4>
         <p>
-            <strong>Admin:</strong> <code>admin@zambuko.co.zw</code> / <code>admin123</code>
+            <strong>Admin:</strong> <code>admin@hutano.co.zw</code> / <code>admin123</code>
         </p>
     </div>
 
     <footer>
-        <p>© 2026 Zambuko Telehealth. Built with ❤️ for Zimbabwe.</p>
+        <p>© 2026 Hutano Telehealth. Built with ❤️ for Zimbabwe.</p>
     </footer>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => lucide.createIcons());</script>
 </body>
 </html>

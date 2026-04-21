@@ -1,7 +1,7 @@
 {
-    "name": "Zambuko Admin",
-    "short_name": "Zambuko Admin",
-    "description": "Zambuko telehealth admin dashboard",
+    "name": "Hutano Admin",
+    "short_name": "Hutano Admin",
+    "description": "Hutano Telehealth admin dashboard",
     "start_url": "/index.html",
     "display": "standalone",
     "background_color": "#ffffff",

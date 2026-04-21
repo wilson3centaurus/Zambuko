@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0D9488">
-    <meta name="description" content="Zambuko Patient App - Access healthcare anywhere">
+    <meta name="description" content="Hutano Patient App - Access healthcare anywhere">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="../shared/icons/icon-192.png">
-    <title>Zambuko - Patient</title>
+    <title>Hutano - Patient</title>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="../shared/css/common.css">
     <link rel="stylesheet" href="css/patient.css">
 </head>
@@ -18,7 +20,7 @@
     <div id="authScreen" class="screen active">
         <div class="login-container">
             <div class="login-logo">
-                <img src="../shared/img/zambuko-logo.svg" alt="Zambuko" style="height: 60px; margin-bottom: 8px;">
+                <img src="../shared/img/zambuko-logo.svg" alt="Hutano" style="height: 60px; margin-bottom: 8px;">
                 <p>Healthcare at your fingertips</p>
             </div>
             
@@ -84,7 +86,7 @@
             <!-- Header -->
             <header class="header">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <img src="../shared/img/zambuko-icon.svg" alt="Zambuko" style="height: 32px;">
+                    <img src="../shared/img/zambuko-icon.svg" alt="Hutano" style="height: 32px;">
                     <div>
                         <h1>Good day</h1>
                         <h2 id="userName" style="font-size: 1rem;">Patient</h2>
@@ -107,30 +109,33 @@
                 <div class="content">
                     <!-- Emergency Banner -->
                     <div class="emergency-banner" onclick="showEmergencyModal()">
-                        <span class="pulse">🚨</span>
+                        <span class="pulse"><i data-lucide="alert-triangle"></i></span>
                         <div>
                             <strong>Emergency?</strong>
                             <p>Tap here for immediate help</p>
                         </div>
                     </div>
 
+                    <!-- Pending Appointment Tracker -->
+                    <div id="pendingAppointmentBanner" style="display:none; margin-bottom: 16px;"></div>
+
                     <!-- Quick Actions -->
                     <h3 style="margin-bottom: 12px;">Quick Actions</h3>
                     <div class="quick-actions">
                         <button class="quick-action" onclick="navigateTo('triageView')">
-                            <div class="quick-action-icon triage">🩺</div>
+                            <div class="quick-action-icon triage"><i data-lucide="stethoscope"></i></div>
                             <span>Symptom Check</span>
                         </button>
                         <button class="quick-action" onclick="navigateTo('doctorsView')">
-                            <div class="quick-action-icon consult">👨‍⚕️</div>
+                            <div class="quick-action-icon consult"><i data-lucide="user-check"></i></div>
                             <span>Find Doctor</span>
                         </button>
                         <button class="quick-action" onclick="navigateTo('historyView')">
-                            <div class="quick-action-icon history">📋</div>
+                            <div class="quick-action-icon history"><i data-lucide="clipboard-list"></i></div>
                             <span>My History</span>
                         </button>
                         <button class="quick-action" onclick="navigateTo('pharmacyView')">
-                            <div class="quick-action-icon pharmacy">💊</div>
+                            <div class="quick-action-icon pharmacy"><i data-lucide="pill"></i></div>
                             <span>Pharmacy</span>
                         </button>
                     </div>
@@ -272,10 +277,10 @@
                             <div class="spinner" style="margin: 20px auto;"></div>
                         </div>
                         <div class="video-controls">
-                            <button class="video-btn video-btn-mute" onclick="toggleMute()">🎤</button>
-                            <button class="video-btn video-btn-mute" onclick="toggleVideo()">📹</button>
-                            <button class="video-btn video-btn-end" onclick="endConsultation()">📞</button>
-                            <button class="video-btn video-btn-mute" onclick="toggleChat()">💬</button>
+                            <button class="video-btn video-btn-mute" onclick="toggleMute()"><i data-lucide="mic"></i></button>
+                            <button class="video-btn video-btn-mute" onclick="toggleVideo()"><i data-lucide="video"></i></button>
+                            <button class="video-btn video-btn-end" onclick="endConsultation()"><i data-lucide="phone-off"></i></button>
+                            <button class="video-btn video-btn-mute" onclick="toggleChat()"><i data-lucide="message-circle"></i></button>
                         </div>
                     </div>
                     <!-- Real-time Chat Panel -->
@@ -353,7 +358,7 @@
     <div id="emergencyModal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header" style="background: var(--danger); color: white;">
-                <h3 class="modal-title">🚨 Emergency Dispatch</h3>
+                <h3 class="modal-title"><i data-lucide="alert-triangle" style="width:18px;height:18px;vertical-align:-3px;margin-right:6px;"></i>Emergency Dispatch</h3>
                 <button class="modal-close" onclick="closeEmergencyModal()">×</button>
             </div>
             <div class="modal-body">
@@ -363,18 +368,18 @@
                     <label class="form-label">Type of Emergency</label>
                     <select class="form-select" id="emergencyType" required>
                         <option value="">Select emergency type...</option>
-                        <option value="chest_pain">🫀 Chest Pain / Heart Attack</option>
-                        <option value="breathing">🫁 Difficulty Breathing</option>
-                        <option value="unconscious">😵 Person Unconscious</option>
-                        <option value="severe_bleeding">🩸 Severe Bleeding</option>
-                        <option value="stroke">🧠 Stroke Symptoms</option>
-                        <option value="accident">🚗 Accident / Injury</option>
-                        <option value="seizure">⚡ Seizure / Convulsions</option>
-                        <option value="allergic">🤧 Severe Allergic Reaction</option>
-                        <option value="poisoning">☠️ Poisoning / Overdose</option>
-                        <option value="burn">🔥 Severe Burns</option>
-                        <option value="childbirth">👶 Childbirth / Labor</option>
-                        <option value="other">❓ Other Emergency</option>
+                        <option value="chest_pain">Chest Pain / Heart Attack</option>
+                        <option value="breathing">Difficulty Breathing</option>
+                        <option value="unconscious">Person Unconscious</option>
+                        <option value="severe_bleeding">Severe Bleeding</option>
+                        <option value="stroke">Stroke Symptoms</option>
+                        <option value="accident">Accident / Injury</option>
+                        <option value="seizure">Seizure / Convulsions</option>
+                        <option value="allergic">Severe Allergic Reaction</option>
+                        <option value="poisoning">Poisoning / Overdose</option>
+                        <option value="burn">Severe Burns</option>
+                        <option value="childbirth">Childbirth / Labor</option>
+                        <option value="other">Other Emergency</option>
                     </select>
                 </div>
 
@@ -386,7 +391,7 @@
                 <div class="form-group">
                     <label class="form-label">Your Location</label>
                     <div class="location-box" id="locationBox">
-                        <span id="locationStatus">📍 Getting your location...</span>
+                        <span id="locationStatus"><i data-lucide="map-pin" style="width:14px;height:14px;"></i> Getting your location...</span>
                         <button class="btn btn-sm btn-secondary" onclick="getEmergencyLocation()">Refresh</button>
                     </div>
                 </div>
@@ -396,7 +401,7 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeEmergencyModal()">Cancel</button>
                 <button class="btn btn-danger" id="dispatchBtn" onclick="dispatchEmergencyNow()">
-                    🚑 Dispatch Now
+                    <i data-lucide="truck" style="width:16px;height:16px;"></i> Dispatch Now
                 </button>
             </div>
         </div>
@@ -432,6 +437,7 @@
     <script src="../shared/js/database.js"></script>
     <script src="../shared/js/utils.js"></script>
     <script src="js/patient.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', () => lucide.createIcons());</script>
     
     <!-- PWA Service Worker Registration -->
     <script>

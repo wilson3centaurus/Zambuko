@@ -1,5 +1,12 @@
 // Zambuko Admin Dashboard JavaScript
 
+// SVG icon constants for use in dynamically generated HTML
+const SVG_ALERT = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`;
+const SVG_CHECK = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+const SVG_STAR  = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const SVG_TRUCK = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h9"/><path d="M10 5h4l4 4v6a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>`;
+const SVG_BLDG  = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v8h4"/><path d="M18 9h2a2 2 0 0 1 2 2v11h-4"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
+
 let currentAdmin = null;
 let charts = {};
 
@@ -196,7 +203,7 @@ async function loadActiveEmergencies() {
 
     container.innerHTML = active.map(em => `
         <div class="alert-item">
-            <span style="font-size: 1.5rem;">🚨</span>
+            <span style="display:flex;align-items:center;">${SVG_ALERT}</span>
             <div style="flex: 1;">
                 <strong>${em.patientName || 'Patient'}</strong>
                 <p style="font-size: 0.9rem; color: var(--text-secondary);">${em.description || 'Emergency dispatch requested'}</p>
@@ -276,9 +283,9 @@ async function loadDoctors() {
             </td>
             <td>${doc.specialty || 'General Practice'}</td>
             <td><span class="badge badge-${(doc.status || 'offline').toLowerCase().replace('_', '-')}">${(doc.status || 'OFFLINE').replace('_', ' ')}</span></td>
-            <td>⭐ ${doc.rating || 4.5}</td>
+            <td><span style="display:inline-flex;align-items:center;gap:4px;">${SVG_STAR} ${doc.rating || 4.5}</span></td>
             <td>${doc.queue || 0}</td>
-            <td>${doc.emergencyCapable ? '✓ Yes' : '✕ No'}</td>
+            <td>${doc.emergencyCapable ? '<span style="color:#22c55e;font-weight:500;">Yes</span>' : '<span style="color:#8b949e;">No</span>'}</td>
             <td>
                 <button class="action-btn edit" onclick="editDoctor('${doc.id}')">Edit</button>
                 <button class="action-btn delete" onclick="deleteDoctor('${doc.id}')">Delete</button>
@@ -324,9 +331,9 @@ async function filterDoctors() {
             </td>
             <td>${doc.specialty || 'General Practice'}</td>
             <td><span class="badge badge-${(doc.status || 'offline').toLowerCase().replace('_', '-')}">${(doc.status || 'OFFLINE').replace('_', ' ')}</span></td>
-            <td>⭐ ${doc.rating || 4.5}</td>
+            <td><span style="display:inline-flex;align-items:center;gap:4px;">${SVG_STAR} ${doc.rating || 4.5}</span></td>
             <td>${doc.queue || 0}</td>
-            <td>${doc.emergencyCapable ? '✓ Yes' : '✕ No'}</td>
+            <td>${doc.emergencyCapable ? '<span style="color:#22c55e;font-weight:500;">Yes</span>' : '<span style="color:#8b949e;">No</span>'}</td>
             <td>
                 <button class="action-btn edit" onclick="editDoctor('${doc.id}')">Edit</button>
                 <button class="action-btn delete" onclick="deleteDoctor('${doc.id}')">Delete</button>
@@ -537,7 +544,7 @@ async function loadEmergencies() {
     } else {
         respondersContainer.innerHTML = dispatches.map(r => `
             <div class="responder-card">
-                <div class="responder-icon">${r.type === 'ambulance' ? '🚑' : '🏥'}</div>
+                <div class="responder-icon">${r.type === 'ambulance' ? SVG_TRUCK : SVG_BLDG}</div>
                 <div class="responder-info">
                     <strong>${r.name || 'Dispatch Unit'}</strong>
                     <span class="badge badge-${(r.status || 'offline').toLowerCase().replace('_', '-')}">${(r.status || 'OFFLINE').replace('_', ' ')}</span>
@@ -554,7 +561,7 @@ async function loadEmergencies() {
     } else {
         logContainer.innerHTML = emergencies.map(em => `
             <div class="alert-item ${em.status === 'RESOLVED' ? 'resolved' : ''}">
-                <span style="font-size: 1.5rem;">${em.status === 'RESOLVED' ? '✓' : '🚨'}</span>
+                <span style="display:flex;align-items:center;">${em.status === 'RESOLVED' ? SVG_CHECK : SVG_ALERT}</span>
                 <div style="flex: 1;">
                     <strong>${em.patientName || 'Patient'}</strong>
                     <p style="font-size: 0.9rem; color: var(--gray);">${em.description || 'Emergency'}</p>
@@ -779,7 +786,7 @@ async function loadDispatches() {
                     <div style="font-size: 0.9rem;">
                         ${dispatch.address || 'N/A'}<br>
                         <small style="color: #666;">
-                            📍 ${dispatch.location?.lat?.toFixed(4)}, ${dispatch.location?.lng?.toFixed(4)}
+                            ${dispatch.location?.lat?.toFixed(4)}, ${dispatch.location?.lng?.toFixed(4)}
                         </small>
                     </div>
                 </td>

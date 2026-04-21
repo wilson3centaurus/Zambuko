@@ -3,6 +3,13 @@
  * Using real IndexedDB database for persistence
  */
 
+// ── Inline SVG icon constants ──────────────────────────────────
+const SVG_STAR  = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+const SVG_PIN   = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+const SVG_USERS = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+const SVG_TRUCK = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`;
+// ──────────────────────────────────────────────────────────────
+
 let currentPatient = null;
 let selectedDoctor = null;
 let selectedSymptoms = [];
@@ -206,6 +213,10 @@ function showMainApp() {
     loadAvailableDoctorsPreview();
     loadConsultationHistory();
     loadPrescriptions();
+    loadPendingAppointment();
+
+    // Refresh appointment status every 5 seconds
+    setInterval(loadPendingAppointment, 5000);
 
     // Start polling for doctor availability
     AvailabilityService.startPolling((doctors) => {
@@ -311,7 +322,7 @@ function performTriageCheck() {
         </div>
         ${triageResult.level === 'EMERGENCY' ? 
             `<button class="btn btn-danger btn-block" onclick="showEmergencyModal()">
-                🚨 Request Emergency Dispatch
+                Request Emergency Dispatch
             </button>` :
             `<button class="btn btn-primary btn-block" onclick="navigateTo('doctorsView')" style="margin-top: 12px;">
                 Find a Doctor
@@ -410,9 +421,9 @@ function createDoctorCard(doc) {
                 <div class="doctor-name">${doc.name || 'Dr. Unknown'}</div>
                 <div class="doctor-specialty">${doc.specialty || 'General Practice'}</div>
                 <div class="doctor-meta">
-                    <span class="doctor-rating">⭐ ${doc.rating || '5.0'}</span>
-                    ${doc.distance ? `<span>📍 ${doc.distance} km</span>` : ''}
-                    <span>👥 ${doc.queue || 0} in queue</span>
+                    <span class="doctor-rating">${SVG_STAR} ${doc.rating || '5.0'}</span>
+                    ${doc.distance ? `<span>${SVG_PIN} ${doc.distance} km</span>` : ''}
+                    <span>${SVG_USERS} ${doc.queue || 0} in queue</span>
                 </div>
             </div>
             <span class="badge badge-${status.toLowerCase().replace('_', '-')}">${status.replace('_', ' ')}</span>
@@ -464,7 +475,7 @@ async function showDoctorProfile(doctorId) {
         <div class="card" style="margin-top: 20px;">
             <div class="stats-row">
                 <div class="stat">
-                    <div class="stat-value">⭐ ${doctor.rating || '5.0'}</div>
+                    <div class="stat-value">${SVG_STAR} ${doctor.rating || '5.0'}</div>
                     <div class="stat-label">Rating</div>
                 </div>
                 <div class="stat">
@@ -541,13 +552,84 @@ async function processPaymentFlow() {
         currentConsultation = consultation;
 
         hideLoading();
-        showToast('Payment successful! Waiting for doctor...', 'success');
-        
-        // Navigate to waiting view first, then poll for doctor acceptance
-        showWaitingForDoctor();
+        showToast('Appointment request sent! The doctor will confirm shortly.', 'success');
+
+        // Show home view with appointment tracker
+        loadPendingAppointment();
+        navigateTo('homeView');
     } catch (error) {
         hideLoading();
         showToast('Payment failed: ' + error.message, 'error');
+    }
+}
+
+// ============ APPOINTMENT TRACKING ============
+
+async function loadPendingAppointment() {
+    const banner = document.getElementById('pendingAppointmentBanner');
+    if (!banner || !currentPatient) return;
+
+    try {
+        const consultations = await ConsultationService.getPatientConsultations(currentPatient.id);
+        const active = consultations
+            .filter(c => ['PENDING', 'SCHEDULED', 'IN_SESSION'].includes(c.status))
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+
+        if (!active) {
+            banner.style.display = 'none';
+            return;
+        }
+
+        const doctor = active.doctorId
+            ? await ZambukoDB.getOneByIndex('doctors', 'odctrId', active.doctorId)
+            : null;
+        const doctorName = doctor?.name || selectedDoctor?.name || 'Your doctor';
+
+        let statusHtml = '';
+        if (active.status === 'PENDING') {
+            statusHtml = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.4rem;">⏳</span>
+                    <div>
+                        <strong>Awaiting confirmation</strong><br>
+                        <small style="color:var(--gray);">Waiting for ${doctorName} to confirm your appointment</small>
+                    </div>
+                </div>`;
+        } else if (active.status === 'SCHEDULED') {
+            const apptTime = new Date(active.scheduledTime);
+            statusHtml = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.4rem;">✅</span>
+                    <div>
+                        <strong>Appointment Confirmed</strong><br>
+                        <small style="color:var(--gray);">${doctorName} · ${apptTime.toLocaleString()}</small>
+                    </div>
+                </div>`;
+        } else if (active.status === 'IN_SESSION') {
+            statusHtml = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.4rem;">🟢</span>
+                    <div>
+                        <strong>Consultation in progress</strong><br>
+                        <small style="color:var(--gray);">${doctorName} is ready for you</small>
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="margin-top:10px; width:100%;" onclick="navigateTo('consultationView')">Join Consultation</button>`;
+            if (!currentConsultation) currentConsultation = active;
+        }
+
+        banner.style.display = 'block';
+        banner.innerHTML = `
+            <div class="card" style="border-left: 4px solid var(--primary); padding: 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <strong style="font-size:0.8rem; letter-spacing:0.05em; color:var(--gray);">YOUR APPOINTMENT</strong>
+                    ${active.status !== 'IN_SESSION' ? `<button onclick="this.closest('#pendingAppointmentBanner').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--gray);font-size:1.2rem;line-height:1;">×</button>` : ''}
+                </div>
+                ${statusHtml}
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error loading pending appointment:', error);
     }
 }
 
@@ -629,11 +711,11 @@ function showDoctorConnected() {
     if (placeholder) {
         placeholder.innerHTML = `
             <div id="consultationDoctorInfo">
-                <img src="${photo}" alt="${selectedDoctor.name}" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #238636; margin-bottom: 12px;">
+                <img src="${photo}" alt="${selectedDoctor.name}" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #2563eb; margin-bottom: 12px;">
                 <h3 style="color: white;">${selectedDoctor.name}</h3>
                 <p style="color: #ccc;">${selectedDoctor.specialty}</p>
             </div>
-            <p style="color: #3fb950; margin-top: 20px;">✓ Connected with Doctor</p>
+            <p style="color: #22c55e; margin-top: 20px;">Connected with Doctor</p>
             <p style="color: #888; font-size: 0.9rem; margin-top: 10px;">Use the chat button to message your doctor</p>
         `;
     }
@@ -696,6 +778,11 @@ async function sendChatMessage() {
     const content = input.value.trim();
     
     if (!content || !currentConsultation) return;
+
+    if (currentConsultation.status === 'PENDING' || currentConsultation.status === 'SCHEDULED') {
+        showToast('Please wait for the doctor to begin the consultation', 'info');
+        return;
+    }
 
     try {
         const message = await ChatService.sendMessage(
@@ -895,12 +982,12 @@ function closeEmergencyModal() {
 
 async function getEmergencyLocation() {
     const statusEl = document.getElementById('locationStatus');
-    statusEl.textContent = '📍 Getting your location...';
+    statusEl.textContent = 'Getting your location...';
 
     try {
         emergencyLocation = await EmergencyService.getCurrentLocation();
         statusEl.innerHTML = `
-            <span style="color: var(--success);">✓ Location acquired</span><br>
+            <span style="color: var(--success);">Location acquired</span><br>
             <small style="color: var(--gray);">Lat: ${emergencyLocation.latitude.toFixed(4)}, Lng: ${emergencyLocation.longitude.toFixed(4)}</small>
         `;
     } catch (error) {
@@ -954,13 +1041,13 @@ async function dispatchEmergencyNow() {
         statusEl.style.display = 'block';
         statusEl.innerHTML = `
             <div class="card" style="background: #FEF3C7; border: 2px solid #F59E0B; color: #381805ff;">
-                <h4 style="color: #92400E;">🚑 Emergency Dispatched!</h4>
+                <h4 style="color: #92400E;">${SVG_TRUCK} Emergency Dispatched!</h4>
                 <p style="margin-top: 8px;">Reference: <strong>${emergency.id}</strong></p>
                 <p>Priority: <strong>${emergency.priority}</strong></p>
                 ${closestDispatch ? `
                     <p>Assigned: <strong>${closestDispatch.name}</strong></p>
                     <p style="font-size: 0.9rem; color: #92400E;">
-                        📍 Unit ID: ${closestDispatch.unitId}
+                        Unit ID: ${closestDispatch.unitId}
                     </p>
                 ` : ''}
                 <p style="margin-top: 12px; color: #92400E;">
@@ -969,11 +1056,11 @@ async function dispatchEmergencyNow() {
             </div>
         `;
 
-        dispatchBtn.textContent = '✓ Dispatched';
+        dispatchBtn.textContent = 'Dispatched';
         showToast('Emergency dispatched successfully!', 'success');
     } catch (error) {
         dispatchBtn.disabled = false;
-        dispatchBtn.textContent = '🚑 Dispatch Now';
+        dispatchBtn.textContent = 'Dispatch Now';
         showToast('Failed to dispatch: ' + error.message, 'error');
     }
 }
@@ -1021,8 +1108,13 @@ function setupRealTimeListeners() {
         if (e.key === 'zambuko_consultation_update') {
             const data = JSON.parse(e.newValue);
             if (data.consultation.patientId === currentPatient?.id) {
-                if (data.action === 'ACCEPTED') {
-                    showToast('Doctor accepted your consultation!', 'success');
+                if (data.action === 'SCHEDULED') {
+                    const apptTime = new Date(data.consultation.scheduledTime).toLocaleString();
+                    showToast('Appointment confirmed for ' + apptTime + '!', 'success');
+                    loadPendingAppointment();
+                } else if (data.action === 'ACCEPTED') {
+                    showToast('Your doctor is ready! Join your consultation.', 'success');
+                    loadPendingAppointment();
                 }
             }
         }

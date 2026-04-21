@@ -1,7 +1,7 @@
 {
-    "name": "Zambuko Patient",
-    "short_name": "Zambuko",
-    "description": "Access healthcare anywhere with Zambuko telehealth",
+    "name": "Hutano Patient",
+    "short_name": "Hutano",
+    "description": "Access healthcare anywhere with Hutano Telehealth",
     "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#ffffff",
