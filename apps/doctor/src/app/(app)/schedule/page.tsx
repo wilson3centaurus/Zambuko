@@ -172,7 +172,7 @@ export default function DoctorSchedulePage() {
           </div>
         ) : (
           historySortedKeys.map((dateKey) => {
-            const items = historyGroups[dateKey];
+            const items = historyGroups[dateKey] ?? [];
             return (
               <div key={dateKey}>
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">

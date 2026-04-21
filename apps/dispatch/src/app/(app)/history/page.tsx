@@ -100,7 +100,7 @@ export default function DispatchHistoryPage() {
           </div>
         ) : (
           emergencies.map((em) => {
-            const priority = PRIORITY_LABELS[em.priority ?? 1] ?? PRIORITY_LABELS[1];
+            const priority = PRIORITY_LABELS[em.priority ?? 1] ?? { label: "LOW", color: "text-gray-400" };
             return (
               <div key={em.id} className="bg-slate-800 rounded-2xl p-4 space-y-2">
                 {/* Row 1: patient + timestamp */}

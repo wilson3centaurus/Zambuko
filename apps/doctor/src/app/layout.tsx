@@ -7,19 +7,20 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: { default: "Zambuko Doctor", template: "%s · Zambuko Doctor" },
-  description: "Doctor portal for the Zambuko Telehealth Platform",
+  title: { default: "Hutano Doctor", template: "%s | Hutano Doctor" },
+  description: "Doctor portal for the Hutano Telehealth Platform",
+  applicationName: "Hutano Doctor",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
-    title: "ZambukoDoc",
+    statusBarStyle: "default",
+    title: "Hutano Doc",
   },
   other: { "mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0284c7",
+  themeColor: "#F07038",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -30,6 +31,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
+      <head>
+        <link rel="apple-touch-icon" href="/icon.svg" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body className="font-sans antialiased bg-gray-50 text-gray-900">
         <Providers>
           <OfflineBanner />

@@ -1,18 +1,28 @@
 {
   "name": "Hutano Dispatch",
-  "short_name": "HutanoDispatch",
+  "short_name": "Dispatch",
   "description": "Ambulance & Dispatcher App — Hutano Emergency Services",
   "start_url": "/dashboard",
-  "id": "com.zambuko.dispatch",
+  "id": "com.hutano.dispatch",
   "display": "standalone",
-  "background_color": "#1e293b",
-  "theme_color": "#dc2626",
-  "orientation": "portrait",
-  "lang": "en-ZW",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#F07038",
+  "lang": "en",
+  "categories": ["medical", "emergency"],
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icon.svg",          "sizes": "any",     "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg",          "sizes": "any",     "type": "image/svg+xml", "purpose": "maskable" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png",     "purpose": "maskable any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png",     "purpose": "maskable any" }
   ],
-  "categories": ["medical", "emergency"]
+  "shortcuts": [
+    {
+      "name": "Active Incidents",
+      "short_name": "Incidents",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": []
 }
