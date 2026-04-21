@@ -1,7 +1,7 @@
 {
   "framework": "nextjs",
   "installCommand": "pnpm install",
-  "buildCommand": "cd ../.. && pnpm turbo build --filter=patient",
+  "buildCommand": "cd ../.. && pnpm turbo build --filter=@zambuko/patient-app",
   "outputDirectory": ".next",
   "headers": [
     {

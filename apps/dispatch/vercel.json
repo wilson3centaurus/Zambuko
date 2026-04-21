@@ -1,7 +1,7 @@
 {
   "framework": "nextjs",
   "installCommand": "pnpm install",
-  "buildCommand": "cd ../.. && pnpm turbo build --filter=dispatch",
+  "buildCommand": "cd ../.. && pnpm turbo build --filter=@zambuko/dispatch",
   "outputDirectory": ".next",
   "headers": [
     {
