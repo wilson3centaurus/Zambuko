@@ -14,6 +14,7 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
     "@tanstack/react-query": "^5.51.23",
+    "date-fns": "^4.1.0",
     "@zambuko/database": "workspace:*",
     "@zambuko/ui": "workspace:*",
     "mapbox-gl": "^3.5.2",
