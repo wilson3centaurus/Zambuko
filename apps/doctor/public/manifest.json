@@ -3,24 +3,37 @@
   "short_name": "Hutano Doc",
   "description": "Hutano Doctor Portal — manage consultations, prescriptions and video calls",
   "start_url": "/dashboard",
-  "id": "com.hutano.doctor",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#F07038",
   "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "id": "com.hutano.doctor",
   "categories": ["medical", "health"],
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ],
+  "screenshots": [],
   "shortcuts": [
     {
       "name": "Dashboard",
       "short_name": "Queue",
       "url": "/dashboard"
     }
-  ],
-  "screenshots": []
+  ]
 }
