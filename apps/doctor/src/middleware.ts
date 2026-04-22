@@ -29,6 +29,8 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
   const { pathname } = request.nextUrl;
 
+  if (pathname.startsWith("/api/")) return response;
+
   // Redirect unauthenticated users to login
   if (!session && !pathname.startsWith("/login") && !pathname.startsWith("/forgot-password") && !pathname.startsWith("/reset-password")) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -56,5 +58,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|sw.js|workbox-|icon.png|icon.svg|logo.svg).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|sw.js|workbox-|icon.png|icon.svg|logo.svg|api/pwa-icon).*)"],
 };

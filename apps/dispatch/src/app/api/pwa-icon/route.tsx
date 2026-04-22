@@ -1,10 +1,8 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const size = { width: 512, height: 512 };
-export const contentType = "image/png";
 
-export default function Icon() {
+export function GET() {
   return new ImageResponse(
     <div
       style={{
@@ -28,6 +26,6 @@ export default function Icon() {
       <div style={{ position: "absolute", left: 392, top: 232, width: 48, height: 48, borderRadius: 24, background: "#0D5060", display: "flex" }} />
       <div style={{ position: "absolute", left: 230, top: 230, width: 52, height: 52, borderRadius: 26, background: "#0D5060", display: "flex" }} />
     </div>,
-    { ...size }
+    { width: 512, height: 512 }
   );
 }
