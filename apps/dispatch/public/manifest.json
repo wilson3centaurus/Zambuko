@@ -4,7 +4,7 @@
   "description": "Ambulance & Dispatcher App — Hutano Emergency Services",
   "start_url": "/dashboard",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#F07038",
