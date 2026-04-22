@@ -303,7 +303,7 @@ export default function ProfilePage() {
           Sign Out
         </button>
 
-        <p className="text-center text-xs text-gray-400 pb-4">Hutano v1.0.0 · University of Zimbabwe</p>
+        <p className="text-center text-xs text-gray-400 pb-4">Hutano v1.0.0 · Reformed Church University</p>
       </div>
     </div>
   );

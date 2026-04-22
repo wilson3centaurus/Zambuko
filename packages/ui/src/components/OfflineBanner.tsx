@@ -8,12 +8,13 @@ interface OfflineBannerProps {
 }
 
 export function OfflineBanner({ className }: OfflineBannerProps) {
-  const [isOffline, setIsOffline] = React.useState(
-    typeof navigator !== "undefined" ? !navigator.onLine : false
-  );
+  const [isOffline, setIsOffline] = React.useState(false);
   const [syncing, setSyncing] = React.useState(false);
 
   React.useEffect(() => {
+    // Set real initial state after mount (avoids SSR mismatch)
+    setIsOffline(!navigator.onLine);
+
     const handleOffline = () => setIsOffline(true);
     const handleOnline = () => {
       setSyncing(true);
