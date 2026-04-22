@@ -16,5 +16,11 @@
     "axe/forms": "off",
     "apple-touch-icons": "off",
     "axe/name-role-value": "off"
-  }
+  },
+  "browserslist": [
+    "defaults",
+    "not ie 11",
+    "not ios_saf <= 18.3",
+    "not safari <= 18.3"
+  ]
 }

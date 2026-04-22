@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- White background for PWA splash / maskable icon safe zone -->
+  <rect width="512" height="512" fill="#ffffff"/>
+
+  <defs>
+    <linearGradient id="crossGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F07038"/>
+      <stop offset="100%" stop-color="#D45520"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Cross vertical arm -->
+  <rect x="192" y="64"  width="128" height="384" rx="40" fill="url(#crossGrad)"/>
+  <!-- Cross horizontal arm -->
+  <rect x="64"  y="192" width="384" height="128" rx="40" fill="url(#crossGrad)"/>
+  <!-- Teal centre square -->
+  <rect x="192" y="192" width="128" height="128" rx="20" fill="#1A6E7E"/>
+
+  <!-- Circuit nodes at arm tips -->
+  <circle cx="256" cy="96"  r="24" fill="#0D5060"/>
+  <circle cx="256" cy="416" r="24" fill="#0D5060"/>
+  <circle cx="96"  cy="256" r="24" fill="#0D5060"/>
+  <circle cx="416" cy="256" r="24" fill="#0D5060"/>
+
+  <!-- Connector lines -->
+  <line x1="256" y1="120" x2="256" y2="192" stroke="#0D5060" stroke-width="14" stroke-linecap="round"/>
+  <line x1="256" y1="320" x2="256" y2="392" stroke="#0D5060" stroke-width="14" stroke-linecap="round"/>
+  <line x1="120" y1="256" x2="192" y2="256" stroke="#0D5060" stroke-width="14" stroke-linecap="round"/>
+  <line x1="320" y1="256" x2="392" y2="256" stroke="#0D5060" stroke-width="14" stroke-linecap="round"/>
+  <!-- Centre dot -->
+  <circle cx="256" cy="256" r="26" fill="#0D5060"/>
+</svg>
