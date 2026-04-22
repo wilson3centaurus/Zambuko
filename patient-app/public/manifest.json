@@ -1,14 +1,10 @@
 {
   "name": "Hutano Patient",
-  "short_name": "Hutano",
+  "short_name": "Hutano Patient",
   "description": "Telehealth for Zimbabwe — consult doctors from anywhere",
   "start_url": "/dashboard",
   "display": "standalone",
-  "display_override": [
-    "window-controls-overlay",
-    "standalone",
-    "minimal-ui"
-  ],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#F07038",
@@ -16,10 +12,7 @@
   "dir": "ltr",
   "scope": "/",
   "id": "com.hutano.patient",
-  "categories": [
-    "health",
-    "medical"
-  ],
+  "categories": ["health", "medical"],
   "prefer_related_applications": false,
   "icons": [
   {
@@ -35,6 +28,7 @@
     "purpose": "any maskable"
   }
 ],
+  "screenshots": [],
   "shortcuts": [
     {
       "name": "Emergency",

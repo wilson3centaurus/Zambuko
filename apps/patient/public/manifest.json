@@ -1,6 +1,6 @@
 {
   "name": "Hutano Patient",
-  "short_name": "Hutano",
+  "short_name": "Hutano Patient",
   "description": "Telehealth for Zimbabwe — consult doctors from anywhere",
   "start_url": "/dashboard",
   "display": "standalone",
