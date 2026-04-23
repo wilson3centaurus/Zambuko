@@ -22,11 +22,11 @@ async function waitForDatabase() {
                 clearInterval(checkDb);
                 resolve();
             }
-        }, 100);
+        }, 50);
         setTimeout(() => {
             clearInterval(checkDb);
             resolve();
-        }, 5000);
+        }, 3000);
     });
 }
 
@@ -54,11 +54,11 @@ async function handleLogin(e) {
     await waitForDatabase();
 
     // Simple admin auth
-    if (email === 'admin@zambuko.co.zw' && password === 'admin123') {
+    if (email === 'admin@hutano.co.zw' && password === 'admin123') {
         currentAdmin = { email, name: 'Admin User', role: 'Super Admin' };
         Zambuko.setSession('admin', currentAdmin);
         showMainApp();
-        Zambuko.showToast('Welcome to Zambuko Admin!', 'success');
+        Zambuko.showToast('Welcome to Hutano Admin!', 'success');
     } else {
         Zambuko.showToast('Invalid credentials', 'error');
     }

@@ -20,7 +20,12 @@ self.addEventListener('install', (event) => {
   console.log('[SW Admin] Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(async (cache) => {
+        // Cache each asset individually — a single 404 won't abort the whole install
+        await Promise.allSettled(
+          STATIC_ASSETS.map(url => cache.add(url).catch(() => {}))
+        );
+      })
       .then(() => self.skipWaiting())
   );
 });

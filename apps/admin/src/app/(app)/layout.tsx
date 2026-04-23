@@ -181,7 +181,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </svg>
             </div>
             <div>
-              <p className="text-white font-semibold text-sm leading-tight">Zambuko</p>
+              <p className="text-white font-semibold text-sm leading-tight">Hutano</p>
               <p className="text-gray-500 text-xs">Admin Portal</p>
             </div>
           </div>
