@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { Toaster } from "sonner";
 import { setupConnectivitySync } from "@zambuko/offline";
 import { createClient } from "@zambuko/database/client";
+import { ThemeProvider } from "@zambuko/ui";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -36,8 +37,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
       <Toaster
         position="top-center"
         toastOptions={{
@@ -51,6 +53,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

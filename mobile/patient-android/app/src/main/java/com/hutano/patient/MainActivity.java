@@ -3,13 +3,31 @@ package com.hutano.patient;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.KeyguardManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.hardware.biometrics.BiometricManager;
+import android.hardware.biometrics.BiometricPrompt;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.RingtoneManager;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
+import android.os.CancellationSignal;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
@@ -23,6 +41,7 @@ import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.JavascriptInterface;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -30,8 +49,9 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.io.IOException;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements SensorEventListener {
     private static final String APP_URL = "https://zambuko-patient.vercel.app/";
     private static final String APP_HOST = "zambuko-patient.vercel.app";
     private static final int WEB_PERMISSION_REQUEST = 1001;
@@ -44,12 +64,21 @@ public class MainActivity extends Activity {
     private GeolocationPermissions.Callback pendingGeoCallback;
     private String pendingGeoOrigin;
     private ValueCallback<Uri[]> fileChooserCallback;
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private int shakeCount = 0;
+    private long shakeWindowStartedAt = 0L;
+    private long lastShakeAt = 0L;
+    private MediaPlayer rescuePlayer;
+    private int previousAlarmVolume = -1;
+    private Vibrator vibrator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         configureSystemBars();
         createWebView();
+        configureShakeDetection();
         registerPredictiveBackHandler();
 
         if (savedInstanceState == null) {
@@ -123,9 +152,186 @@ public class MainActivity extends Activity {
 
         webView.setWebViewClient(new HutanoWebViewClient());
         webView.setWebChromeClient(new HutanoWebChromeClient());
+        webView.addJavascriptInterface(new HutanoNativeBridge(), "HutanoNative");
         webView.setDownloadListener((url, userAgent, contentDisposition, mimeType, contentLength) ->
             openExternal(Uri.parse(url))
         );
+    }
+
+    private final class HutanoNativeBridge {
+        @JavascriptInterface
+        public void requestQuickSOS() {
+            runOnUiThread(() -> authenticateForQuickSOS("biometric"));
+        }
+
+        @JavascriptInterface
+        public void activateRescueSignal() {
+            runOnUiThread(MainActivity.this::startRescueSignal);
+        }
+    }
+
+    private void configureShakeDetection() {
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager != null) {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (sensorManager != null && accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (sensorManager != null) sensorManager.unregisterListener(this);
+        super.onPause();
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER) return;
+        double force = Math.sqrt(
+            event.values[0] * event.values[0]
+                + event.values[1] * event.values[1]
+                + event.values[2] * event.values[2]
+        ) / SensorManager.GRAVITY_EARTH;
+        long now = SystemClock.elapsedRealtime();
+        if (force < 2.7 || now - lastShakeAt < 350) return;
+        lastShakeAt = now;
+        if (shakeWindowStartedAt == 0L || now - shakeWindowStartedAt > 4000) {
+            shakeWindowStartedAt = now;
+            shakeCount = 1;
+        } else {
+            shakeCount += 1;
+        }
+        if (shakeCount >= 3) {
+            shakeCount = 0;
+            shakeWindowStartedAt = 0L;
+            runOnUiThread(this::confirmShakeSOS);
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // No accuracy-specific handling is needed for the emergency gesture.
+    }
+
+    private void confirmShakeSOS() {
+        if (isFinishing()) return;
+        new AlertDialog.Builder(this)
+            .setTitle("Open Quick SOS?")
+            .setMessage("Three shakes were detected. Continue to confirm your emergency, symptoms, and location. This does not send an SOS yet.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Continue", (dialog, which) -> authenticateForQuickSOS("shake"))
+            .show();
+    }
+
+    private void authenticateForQuickSOS(String source) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            BiometricManager manager = (BiometricManager) getSystemService(Context.BIOMETRIC_SERVICE);
+            if (manager != null && manager.canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS) {
+                CancellationSignal cancellation = new CancellationSignal();
+                BiometricPrompt prompt = new BiometricPrompt.Builder(this)
+                    .setTitle("Verify Quick SOS")
+                    .setSubtitle("Use your phone biometric to open the fast emergency form")
+                    .setNegativeButton("Cancel", getMainExecutor(), (dialog, which) -> cancellation.cancel())
+                    .build();
+                prompt.authenticate(cancellation, getMainExecutor(), new BiometricPrompt.AuthenticationCallback() {
+                    @Override
+                    public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+                        openQuickSOS(source);
+                    }
+
+                    @Override
+                    public void onAuthenticationError(int errorCode, CharSequence errString) {
+                        if (errorCode != BiometricPrompt.BIOMETRIC_ERROR_CANCELED
+                            && errorCode != BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED) {
+                            Toast.makeText(MainActivity.this, "Biometric verification was not completed.", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+                return;
+            }
+        }
+
+        KeyguardManager keyguard = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        if (keyguard != null && keyguard.isDeviceSecure()) {
+            new AlertDialog.Builder(this)
+                .setTitle("Biometric unavailable")
+                .setMessage("This phone has no supported biometric enrolled. Continue with the normal confirmed SOS form?")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Continue", (dialog, which) -> openQuickSOS(source))
+                .show();
+        } else {
+            openQuickSOS(source);
+        }
+    }
+
+    private void openQuickSOS(String source) {
+        runOnUiThread(() -> webView.loadUrl(APP_URL + "emergency?quick=1&source=" + source));
+    }
+
+    private void startRescueSignal() {
+        stopRescueSignal();
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (audioManager != null) {
+            previousAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM);
+            audioManager.setStreamVolume(
+                AudioManager.STREAM_ALARM,
+                audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM),
+                0
+            );
+        }
+        Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        rescuePlayer = new MediaPlayer();
+        try {
+            rescuePlayer.setAudioAttributes(new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build());
+            rescuePlayer.setDataSource(this, alarmUri);
+            rescuePlayer.setLooping(true);
+            rescuePlayer.prepare();
+            rescuePlayer.start();
+        } catch (IOException | RuntimeException error) {
+            rescuePlayer.release();
+            rescuePlayer = null;
+            Toast.makeText(this, "The rescue alarm could not start. Vibration will continue.", Toast.LENGTH_LONG).show();
+        }
+        if (vibrator != null && vibrator.hasVibrator()) {
+            long[] pattern = {0, 1000, 400, 1000, 400};
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
+            } else {
+                vibrator.vibrate(pattern, 0);
+            }
+        }
+        new Handler(Looper.getMainLooper()).postDelayed(this::stopRescueSignal, 60000);
+        new AlertDialog.Builder(this)
+            .setTitle("Rescue signal active")
+            .setMessage("The alarm and vibration will stop automatically after one minute.")
+            .setCancelable(false)
+            .setPositiveButton("Stop now", (dialog, which) -> stopRescueSignal())
+            .show();
+    }
+
+    private void stopRescueSignal() {
+        if (rescuePlayer != null) {
+            if (rescuePlayer.isPlaying()) rescuePlayer.stop();
+            rescuePlayer.release();
+            rescuePlayer = null;
+        }
+        if (vibrator != null) vibrator.cancel();
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (audioManager != null && previousAlarmVolume >= 0) {
+            audioManager.setStreamVolume(AudioManager.STREAM_ALARM, previousAlarmVolume, 0);
+            previousAlarmVolume = -1;
+        }
     }
 
     private final class HutanoWebViewClient extends WebViewClient {
@@ -374,6 +580,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        stopRescueSignal();
         if (webView != null) {
             webView.stopLoading();
             webView.setWebChromeClient(null);

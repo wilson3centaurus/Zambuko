@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
-import { Button } from "@zambuko/ui";
+import { Button, PasswordInput, ImageUpload } from "@zambuko/ui";
 import { toast } from "sonner";
 
 const SPECIALTIES = [
@@ -24,7 +24,7 @@ export default function DoctorProfilePage() {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [pwSaving, setPwSaving] = useState(false);
-  const [pwForm, setPwForm] = useState({ newPassword: "", confirm: "" });
+  const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
 
   const { data, isLoading } = useQuery({
     queryKey: ["doctor-profile-edit"],
@@ -109,10 +109,14 @@ export default function DoctorProfilePage() {
     if (pwForm.newPassword !== pwForm.confirm) { toast.error("Passwords don't match."); return; }
     setPwSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error("Your signed-in email could not be verified.");
+      const { error: reauthError } = await supabase.auth.signInWithPassword({ email: user.email, password: pwForm.currentPassword });
+      if (reauthError) throw new Error("Your current password is incorrect.");
       const { error } = await supabase.auth.updateUser({ password: pwForm.newPassword });
       if (error) throw error;
       toast.success("Password changed successfully!");
-      setPwForm({ newPassword: "", confirm: "" });
+      setPwForm({ currentPassword: "", newPassword: "", confirm: "" });
     } catch (err: any) {
       toast.error(err.message ?? "Failed to change password.");
     } finally {
@@ -125,6 +129,24 @@ export default function DoctorProfilePage() {
     router.push("/login");
   }
 
+  async function uploadAvatar(file: File) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Please sign in again.");
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/doctor.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+    });
+    if (uploadError) throw uploadError;
+    const { data: url } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { error } = await supabase.from("profiles").update({ avatar_url: `${url.publicUrl}?v=${Date.now()}` }).eq("id", user.id);
+    if (error) throw error;
+    toast.success("Doctor photo updated across patient and admin views.");
+    qc.invalidateQueries({ queryKey: ["doctor-profile-edit"] });
+    qc.invalidateQueries({ queryKey: ["doctor-profile"] });
+  }
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen bg-slate-950"><p className="text-slate-400">Loading…</p></div>;
   }
@@ -133,10 +155,14 @@ export default function DoctorProfilePage() {
     <div className="min-h-screen bg-slate-950 pb-24">
       {/* Header */}
       <div className="bg-slate-900 px-5 pt-12 pb-6 border-b border-slate-800">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-3xl bg-sky-600 flex items-center justify-center text-2xl font-black text-white">
-            {form.full_name.charAt(0) || "D"}
-          </div>
+        <div className="space-y-4">
+          <ImageUpload
+            label="Upload doctor photo"
+            imageUrl={data?.profile?.avatar_url}
+            initials={form.full_name || "DR"}
+            onUpload={uploadAvatar}
+            shape="rounded"
+          />
           <div>
             <h1 className="text-white font-black text-lg">{form.full_name || "Your Profile"}</h1>
             <p className="text-slate-400 text-sm">{data?.email}</p>
@@ -250,13 +276,13 @@ export default function DoctorProfilePage() {
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Change Password</h2>
           <div className="bg-slate-900 rounded-2xl overflow-hidden divide-y divide-slate-800">
             {[
+              { label: "Current Password", key: "currentPassword" as const, placeholder: "Verify it is you" },
               { label: "New Password", key: "newPassword" as const, placeholder: "8+ characters" },
               { label: "Confirm Password", key: "confirm" as const, placeholder: "Repeat password" },
             ].map(({ label, key, placeholder }) => (
               <div key={key} className="flex items-center px-4 py-3 gap-3">
                 <label className="text-slate-400 text-sm w-32 shrink-0">{label}</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={pwForm[key]}
                   onChange={(e) => setPwForm((f) => ({ ...f, [key]: e.target.value }))}
                   placeholder={placeholder}

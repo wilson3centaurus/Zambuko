@@ -16,6 +16,8 @@ export default function DashboardPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [patientBasics, setPatientBasics] = useState<{ emergency_contact_name?: string | null; consent_given_at?: string | null } | null>(null);
+  const [locationState, setLocationState] = useState<PermissionState | "unsupported">("prompt");
   const [storedEmergencyId, setStoredEmergencyId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
@@ -36,14 +38,23 @@ export default function DashboardPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const user = session?.user;
       if (user) {
-        supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single()
-          .then(({ data }) => setProfile(data));
+        Promise.all([
+          supabase.from("profiles").select("*").eq("id", user.id).single(),
+          supabase.from("patients").select("emergency_contact_name,consent_given_at").eq("id", user.id).single(),
+        ]).then(([profileResult, patientResult]) => {
+          setProfile(profileResult.data);
+          setPatientBasics(patientResult.data);
+        });
       }
     });
+    if ("permissions" in navigator) {
+      navigator.permissions.query({ name: "geolocation" }).then((permission) => {
+        setLocationState(permission.state);
+        permission.onchange = () => setLocationState(permission.state);
+      }).catch(() => setLocationState("unsupported"));
+    } else {
+      setLocationState("unsupported");
+    }
     // Pick up any active emergency from localStorage
     const stored = localStorage.getItem("zambuko_active_emergency");
     if (stored) {
@@ -55,6 +66,18 @@ export default function DashboardPage() {
       }
     }
   }, []);
+
+  function requestLocation() {
+    if (!navigator.geolocation) {
+      setLocationState("unsupported");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      () => setLocationState("granted"),
+      () => setLocationState("denied"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
 
   const { data: consultations = [], isLoading: consultLoading } = useQuery({
     queryKey: ["patient-consultations"],
@@ -119,6 +142,13 @@ export default function DashboardPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
+  const missingSetup = [
+    !profile?.avatar_url && "photo",
+    !profile?.date_of_birth && "date of birth",
+    !profile?.city && "city",
+    !patientBasics?.emergency_contact_name && "emergency contact",
+    !patientBasics?.consent_given_at && "consent",
+  ].filter(Boolean) as string[];
 
   return (
     <div className="min-h-app bg-slate-50">
@@ -129,6 +159,10 @@ export default function DashboardPage() {
             <p className="text-sm font-medium text-brand-200">{greeting},</p>
             <h1 className="mt-1 text-2xl font-bold text-white lg:text-3xl">{firstName}</h1>
             <p className="mt-1 text-sm text-brand-100">How are you feeling today?</p>
+            <button onClick={requestLocation} className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${locationState === "granted" ? "bg-emerald-400/20 text-emerald-100" : "bg-amber-300/20 text-amber-100"}`}>
+              <span className={`h-2 w-2 rounded-full ${locationState === "granted" ? "bg-emerald-300" : "bg-amber-300"}`} />
+              Location {locationState === "granted" ? "enabled" : locationState === "denied" ? "blocked · tap for help" : "not enabled · tap to allow"}
+            </button>
           </div>
           <Link href="/notifications" aria-label={`${unreadNotifications} unread notifications`} className="relative grid h-11 w-11 place-items-center rounded-lg border border-white/15 bg-white/10 text-white hover:bg-white/15">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
@@ -144,6 +178,17 @@ export default function DashboardPage() {
       </div>
 
       <div className="mx-auto -mt-4 max-w-5xl space-y-4 px-4 pb-6 lg:px-8">
+        {missingSetup.length > 0 && (
+          <Link href="/profile?setup=1" className="block rounded-2xl border border-amber-300 bg-amber-50 p-4 shadow-sm dark:border-amber-800 dark:bg-amber-950/50">
+            <div className="flex items-start gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-200 text-lg" aria-hidden="true">!</span>
+              <div>
+                <p className="font-black text-amber-950 dark:text-amber-100">Please complete setup first</p>
+                <p className="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">Missing: {missingSetup.join(", ")}. Completing this helps doctors and emergency responders assist you safely.</p>
+              </div>
+            </div>
+          </Link>
+        )}
         {/* Active emergency banner */}
         {liveEmergency && !["resolved", "cancelled"].includes(liveEmergency.status) && (
           <div className={`rounded-2xl p-4 border-2 space-y-3 ${

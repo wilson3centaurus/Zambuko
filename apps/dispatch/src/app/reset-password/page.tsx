@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
 import { toast } from "sonner";
+import { PasswordInput } from "@zambuko/ui";
 
 export default function ResetPasswordPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -14,14 +15,21 @@ export default function ResetPasswordPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-      else {
-        toast.error("Invalid or expired reset link.");
-        router.push("/login");
-      }
+    let settled = false;
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN")) { settled = true; setReady(true); }
     });
-  }, []);
+    const code = new URLSearchParams(window.location.search).get("code");
+    void (async () => {
+      if (code) await supabase.auth.exchangeCodeForSession(code);
+      const { data } = await supabase.auth.getSession();
+      if (data.session) { settled = true; setReady(true); }
+    })();
+    const timeout = window.setTimeout(() => {
+      if (!settled) { toast.error("Invalid or expired reset link."); router.push("/login"); }
+    }, 5000);
+    return () => { listener.subscription.unsubscribe(); window.clearTimeout(timeout); };
+  }, [router, supabase.auth]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,13 +72,13 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-2">New Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)}
               placeholder="8+ characters" required autoFocus
               className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" />
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-2">Confirm Password</label>
-            <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)}
+            <PasswordInput value={confirm} onChange={(e) => setConfirm(e.target.value)}
               placeholder="Repeat password" required
               className="w-full bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" />
           </div>

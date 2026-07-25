@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
-import { Card, CardBody, Button } from "@zambuko/ui";
+import { Card, CardBody, Button, PasswordInput, ImageUpload } from "@zambuko/ui";
+import Link from "next/link";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -26,8 +27,12 @@ export default function ProfilePage() {
   const supabase = createClient();
   const qc = useQueryClient();
   const [editSection, setEditSection] = useState<"personal" | "medical" | "emergency" | "password" | null>(null);
-  const [pwForm, setPwForm] = useState({ newPassword: "", confirm: "" });
+  const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
   const [pwSaving, setPwSaving] = useState(false);
+  const [consentSaving, setConsentSaving] = useState(false);
+  const [consentAcknowledged, setConsentAcknowledged] = useState(false);
+  const today = new Date().toISOString().slice(0, 10);
+  const earliestDob = `${new Date().getFullYear() - 120}-01-01`;
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
@@ -35,10 +40,17 @@ export default function ProfilePage() {
     if (pwForm.newPassword !== pwForm.confirm) { toast.error("Passwords don't match."); return; }
     setPwSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error("Your signed-in email could not be verified.");
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: pwForm.currentPassword,
+      });
+      if (reauthError) throw new Error("Your current password is incorrect.");
       const { error } = await supabase.auth.updateUser({ password: pwForm.newPassword });
       if (error) throw error;
       toast.success("Password changed!");
-      setPwForm({ newPassword: "", confirm: "" });
+      setPwForm({ currentPassword: "", newPassword: "", confirm: "" });
       setEditSection(null);
     } catch (err: any) {
       toast.error(err.message ?? "Failed to change password.");
@@ -73,6 +85,9 @@ export default function ProfilePage() {
     emergency_contact_phone: "",
     emergency_contact_relation: "",
     low_bandwidth_mode: false,
+    legal_full_name: "",
+    national_id: "",
+    national_id_document_path: "",
   });
 
   // Populate form once data loads
@@ -91,11 +106,17 @@ export default function ProfilePage() {
       emergency_contact_phone: data.patient?.emergency_contact_phone ?? "",
       emergency_contact_relation: data.patient?.emergency_contact_relation ?? "",
       low_bandwidth_mode: data.profile?.low_bandwidth_mode ?? false,
+      legal_full_name: data.patient?.legal_full_name ?? "",
+      national_id: data.patient?.national_id ?? "",
+      national_id_document_path: data.patient?.national_id_document_path ?? "",
     });
   }, [data]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      if (form.date_of_birth && (form.date_of_birth > today || form.date_of_birth < earliestDob)) {
+        throw new Error("Enter a valid date of birth.");
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
       await Promise.all([
@@ -122,8 +143,86 @@ export default function ProfilePage() {
       setEditSection(null);
       qc.invalidateQueries({ queryKey: ["profile"] });
     },
-    onError: () => toast.error("Could not save changes. Please retry."),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save changes. Please retry."),
   });
+
+  async function uploadAvatar(file: File) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Please sign in again.");
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/profile.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+    });
+    if (uploadError) throw uploadError;
+    const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(path);
+    const avatarUrl = `${publicUrl.publicUrl}?v=${Date.now()}`;
+    const { error } = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
+    if (error) throw error;
+    toast.success("Profile photo updated everywhere.");
+    qc.invalidateQueries({ queryKey: ["profile"] });
+  }
+
+  async function uploadIdentityDocument(file: File) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Please sign in again.");
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/national-id.${extension}`;
+    const { error } = await supabase.storage.from("identity-documents").upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+    });
+    if (error) throw error;
+    setForm((current) => ({ ...current, national_id_document_path: path }));
+    toast.success("ID image uploaded privately.");
+  }
+
+  async function recordConsent() {
+    if (form.legal_full_name.trim().length < 3) {
+      toast.error("Enter your full legal name as shown on your identity document.");
+      return;
+    }
+    if (!/^[A-Za-z0-9 ./-]{5,30}$/.test(form.national_id.trim())) {
+      toast.error("Enter a valid national ID number.");
+      return;
+    }
+    if (!form.national_id_document_path) {
+      toast.error("Upload a clear image of your identity document.");
+      return;
+    }
+    if (!consentAcknowledged) {
+      toast.error("Read and tick the consent acknowledgement.");
+      return;
+    }
+    setConsentSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("Please sign in again.");
+      const consentTime = new Date().toISOString();
+      const { error } = await supabase.from("patients").update({
+        legal_full_name: form.legal_full_name.trim(),
+        national_id: form.national_id.trim().toUpperCase(),
+        national_id_document_path: form.national_id_document_path,
+        consent_version: "2026-07-25",
+        consent_given_at: consentTime,
+      }).eq("id", session.user.id);
+      if (error) throw error;
+      const response = await fetch("/api/consent-confirmation", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const result = await response.json();
+      toast.success(result.emailSent
+        ? "Consent recorded. A confirmation email has been sent."
+        : "Consent recorded. Confirmation is available in Notifications.");
+      qc.invalidateQueries({ queryKey: ["profile"] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not record consent.");
+    } finally {
+      setConsentSaving(false);
+    }
+  }
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -153,11 +252,15 @@ export default function ProfilePage() {
 
       <div className="px-4 py-4 space-y-4 max-w-lg mx-auto pb-safe">
         {/* Avatar + name */}
-        <div className="bg-white rounded-2xl p-4 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-brand-100 flex items-center justify-center text-2xl font-bold text-brand-600">
-            {data?.profile?.full_name?.charAt(0) ?? "?"}
-          </div>
-          <div>
+        <div className="rounded-2xl bg-white p-4 dark:bg-slate-900">
+          <ImageUpload
+            label="Upload patient photo"
+            imageUrl={data?.profile?.avatar_url}
+            initials={data?.profile?.full_name}
+            onUpload={uploadAvatar}
+            shape="rounded"
+          />
+          <div className="mt-3">
             <p className="font-bold text-gray-900 text-lg">{data?.profile?.full_name ?? "—"}</p>
             <p className="text-sm text-gray-500">{data?.user?.phone ?? data?.user?.email ?? "No contact"}</p>
             <p className="text-xs text-brand-600 font-medium mt-0.5 capitalize">{data?.profile?.role ?? "patient"}</p>
@@ -169,7 +272,7 @@ export default function ProfilePage() {
           {editSection === "personal" ? (
             <div className="space-y-3">
               <LabeledInput label="Full Name" value={form.full_name} onChange={(v) => setForm(f => ({ ...f, full_name: v }))} />
-              <LabeledInput label="Date of Birth" type="date" value={form.date_of_birth} onChange={(v) => setForm(f => ({ ...f, date_of_birth: v }))} />
+              <LabeledInput label="Date of Birth" type="date" value={form.date_of_birth} onChange={(v) => setForm(f => ({ ...f, date_of_birth: v }))} min={earliestDob} max={today} />
               <div>
                 <label className="text-xs font-semibold text-gray-500 block mb-1">Gender</label>
                 <div className="flex gap-2">
@@ -262,6 +365,37 @@ export default function ProfilePage() {
         </SectionCard>
 
         {/* Settings */}
+        <Card className="border-brand-200">
+          <CardBody className="space-y-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-wider text-brand-700">Identity & informed consent</p>
+              <h3 className="mt-1 font-black text-slate-950 dark:text-white">Understand and approve health-data use</h3>
+              <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                Hutano uses your information to provide consultations, prescriptions, emergency response, and account support. Access is limited by account roles and protected in transit. No digital system is risk-free; you may ask support about access, correction, or deletion where applicable.
+              </p>
+            </div>
+            {data?.patient?.consent_given_at ? (
+              <div className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100">
+                <strong>Consent recorded</strong>
+                <p className="mt-1 text-xs">Version {data.patient.consent_version} · {format(new Date(data.patient.consent_given_at), "d MMM yyyy, HH:mm")}</p>
+              </div>
+            ) : (
+              <>
+                <LabeledInput label="Full legal name" value={form.legal_full_name} onChange={(value) => setForm((current) => ({ ...current, legal_full_name: value }))} placeholder="As written on national documents" />
+                <LabeledInput label="National ID number" value={form.national_id} onChange={(value) => setForm((current) => ({ ...current, national_id: value }))} placeholder="e.g. 63-123456-A-12" />
+                <ImageUpload label={form.national_id_document_path ? "Replace ID image" : "Take/upload ID image"} initials="ID" onUpload={uploadIdentityDocument} shape="rounded" />
+                {form.national_id_document_path && <p className="text-xs font-semibold text-emerald-700">ID image securely uploaded and ready.</p>}
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                  <input type="checkbox" checked={consentAcknowledged} onChange={(event) => setConsentAcknowledged(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-700" />
+                  <span className="text-xs leading-5 text-slate-700 dark:text-slate-200">I confirm this identity is mine, the information is accurate, and I consent to Hutano processing my health and location information for the care and emergency purposes described above.</span>
+                </label>
+                <Button onClick={recordConsent} loading={consentSaving} className="w-full">Confirm consent</Button>
+              </>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Settings */}
         <Card>
           <CardBody className="space-y-3">
             <h3 className="font-bold text-gray-900">Settings</h3>
@@ -270,15 +404,23 @@ export default function ProfilePage() {
                 <p className="text-sm font-medium text-gray-900">Low Bandwidth Mode</p>
                 <p className="text-xs text-gray-500">Reduces data usage for slow connections</p>
               </div>
-              <button onClick={async () => {
+              <button role="switch" aria-checked={form.low_bandwidth_mode} onClick={async () => {
                 const newVal = !form.low_bandwidth_mode;
                 setForm(f => ({ ...f, low_bandwidth_mode: newVal }));
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
-                  await supabase.from("profiles").update({ low_bandwidth_mode: newVal }).eq("id", user.id);
+                  const { error } = await supabase.from("profiles").update({ low_bandwidth_mode: newVal }).eq("id", user.id);
+                  if (error) {
+                    setForm(f => ({ ...f, low_bandwidth_mode: !newVal }));
+                    toast.error("Could not change low bandwidth mode.");
+                    return;
+                  }
+                  localStorage.setItem("hutano-low-bandwidth", String(newVal));
+                  document.documentElement.classList.toggle("low-bandwidth", newVal);
+                  toast.success(newVal ? "Low bandwidth mode is on." : "Full quality mode is on.");
                 }
-              }} className={`relative w-11 h-6 rounded-full transition-colors ${form.low_bandwidth_mode ? "bg-brand-600" : "bg-gray-200"}`}>
-                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.low_bandwidth_mode ? "translate-x-5.5" : "translate-x-0.5"}`} />
+              }} className={`relative h-6 w-11 rounded-full transition-colors ${form.low_bandwidth_mode ? "bg-brand-600" : "bg-gray-200"}`}>
+                <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.low_bandwidth_mode ? "translate-x-5" : "translate-x-0.5"}`} />
               </button>
             </div>
           </CardBody>
@@ -288,14 +430,20 @@ export default function ProfilePage() {
         <SectionCard title="Change Password" onEdit={() => setEditSection("password")} isEditing={editSection === "password"}>
           {editSection === "password" ? (
             <form onSubmit={handleChangePassword} className="space-y-3">
+              <LabeledInput label="Current Password" type="password" value={pwForm.currentPassword} onChange={(v) => setPwForm(f => ({ ...f, currentPassword: v }))} placeholder="Required to verify it is you" />
               <LabeledInput label="New Password" type="password" value={pwForm.newPassword} onChange={(v) => setPwForm(f => ({ ...f, newPassword: v }))} placeholder="8+ characters" />
               <LabeledInput label="Confirm Password" type="password" value={pwForm.confirm} onChange={(v) => setPwForm(f => ({ ...f, confirm: v }))} placeholder="Repeat new password" />
-              <SaveButtons loading={pwSaving} onSave={() => handleChangePassword({ preventDefault: () => {} } as any)} onCancel={() => { setEditSection(null); setPwForm({ newPassword: "", confirm: "" }); }} />
+              <SaveButtons loading={pwSaving} onSave={() => handleChangePassword({ preventDefault: () => {} } as any)} onCancel={() => { setEditSection(null); setPwForm({ currentPassword: "", newPassword: "", confirm: "" }); }} />
             </form>
           ) : (
             <p className="text-sm text-gray-500">••••••••</p>
           )}
         </SectionCard>
+
+        <Link href="/history" className="block rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-brand-300 dark:border-slate-800 dark:bg-slate-900">
+          <p className="font-bold text-slate-900 dark:text-white">Consultation & emergency history</p>
+          <p className="mt-1 text-sm text-slate-500">View previous care, prescriptions, and SOS requests →</p>
+        </Link>
 
         {/* Sign out */}
         <button onClick={signOut}
@@ -336,14 +484,19 @@ function InfoRow({ label, value, capitalize }: { label: string; value: string; c
   );
 }
 
-function LabeledInput({ label, value, onChange, type = "text", placeholder }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string;
+function LabeledInput({ label, value, onChange, type = "text", placeholder, min, max }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; min?: string; max?: string;
 }) {
   return (
     <div>
       <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
+      {type === "password" ? (
+        <PasswordInput value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm dark:border-slate-700 dark:bg-slate-900" />
+      ) : (
+        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} min={min} max={max}
+          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm dark:border-slate-700 dark:bg-slate-900" />
+      )}
     </div>
   );
 }

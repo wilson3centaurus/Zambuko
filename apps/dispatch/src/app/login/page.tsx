@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
 import { toast } from "sonner";
+import { PasswordInput } from "@zambuko/ui";
 
 export default function DispatchLoginPage() {
   const router = useRouter();
@@ -59,8 +60,7 @@ export default function DispatchLoginPage() {
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-2">
               Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"

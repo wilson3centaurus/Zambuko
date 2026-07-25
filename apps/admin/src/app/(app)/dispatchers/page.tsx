@@ -134,7 +134,7 @@ function AddDispatcherModal({ onClose }: { onClose: () => void }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={LABEL}>Date of Birth *</label>
-              <input type="date" required value={form.date_of_birth} onChange={set("date_of_birth")} className={INPUT} />
+              <input type="date" required min={`${new Date().getFullYear() - 120}-01-01`} max={new Date().toISOString().slice(0, 10)} value={form.date_of_birth} onChange={set("date_of_birth")} className={INPUT} />
             </div>
             <div>
               <label className={LABEL}>National ID *</label>
@@ -349,7 +349,7 @@ export default function DispatchersAdminPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("dispatchers")
-        .select("*, profiles!inner(full_name, phone, city, is_active, created_at)")
+        .select("*, profiles!inner(full_name, phone, city, avatar_url, is_active, created_at)")
         .order("created_at", { referencedTable: "profiles", ascending: false });
       return data ?? [];
     },
@@ -433,8 +433,8 @@ export default function DispatchersAdminPage() {
                   <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-red-900/50 flex items-center justify-center font-bold text-red-400 text-sm flex-shrink-0">
-                        {profile?.full_name?.charAt(0) ?? "?"}
+                      <div className="w-9 h-9 overflow-hidden rounded-xl bg-red-900/50 flex items-center justify-center font-bold text-red-400 text-sm flex-shrink-0">
+                        {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : profile?.full_name?.charAt(0) ?? "?"}
                       </div>
                       <div>
                         <p className="font-semibold text-white text-sm">{profile?.full_name}</p>

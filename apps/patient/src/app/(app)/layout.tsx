@@ -10,7 +10,7 @@ import { toast } from "sonner";
 type NavItem = {
   href: string;
   label: string;
-  icon: "home" | "consult" | "emergency" | "history" | "profile";
+  icon: "home" | "consult" | "emergency" | "learn" | "profile";
   emergency?: boolean;
 };
 
@@ -18,7 +18,7 @@ const NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: "home" },
   { href: "/triage", label: "Consult", icon: "consult" },
   { href: "/emergency", label: "Emergency", icon: "emergency", emergency: true },
-  { href: "/history", label: "History", icon: "history" },
+  { href: "/learn", label: "Learn", icon: "learn" },
   { href: "/profile", label: "Profile", icon: "profile" },
 ];
 
@@ -27,7 +27,7 @@ function NavIcon({ name, className = "h-5 w-5" }: { name: NavItem["icon"]; class
     home: <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.75 12 3l9 7.75M5.25 9.5v10.25h5v-6h3.5v6h5V9.5" />,
     consult: <path strokeLinecap="round" strokeLinejoin="round" d="M9 5.25h6M9 9h6m-6 3.75h3.75M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />,
     emergency: <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.75v8.5m0 4v.1M10.3 2.9 2.5 17a2 2 0 0 0 1.75 3h15.5a2 2 0 0 0 1.75-3L13.7 2.9a1.95 1.95 0 0 0-3.4 0Z" />,
-    history: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12a8.25 8.25 0 1 0 2.42-5.83L3.75 8.6m0-4.85V8.6H8.6M12 7.5V12l3 1.75" />,
+    learn: <path strokeLinecap="round" strokeLinejoin="round" d="M4 5.5A3.5 3.5 0 0 1 7.5 2H12v18H7.5A3.5 3.5 0 0 0 4 23.5v-18Zm16 0A3.5 3.5 0 0 0 16.5 2H12v18h4.5a3.5 3.5 0 0 1 3.5 3.5v-18Z" />,
     profile: <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 7.5a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0" />,
   };
 

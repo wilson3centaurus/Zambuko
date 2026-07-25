@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
-import { Button } from "@zambuko/ui";
+import { Button, PasswordInput } from "@zambuko/ui";
 import { toast } from "sonner";
 
 export default function DoctorLoginPage() {
@@ -59,8 +59,7 @@ export default function DoctorLoginPage() {
               <label className="text-sm font-medium text-gray-700 block mb-2">
                 Password
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"

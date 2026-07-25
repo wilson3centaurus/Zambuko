@@ -1,29 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
 import { toast } from "sonner";
+import { PasswordInput } from "@zambuko/ui";
 
 export default function ResetPasswordPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
 
-  // Supabase sends the user to this page with a session already established
-  // via the URL hash fragment. We just need to detect the session.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-      else {
-        toast.error("Invalid or expired reset link.");
-        router.push("/login");
-      }
+    let settled = false;
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN")) { settled = true; setReady(true); }
     });
-  }, []);
+    const code = new URLSearchParams(window.location.search).get("code");
+    void (async () => {
+      if (code) await supabase.auth.exchangeCodeForSession(code);
+      const { data } = await supabase.auth.getSession();
+      if (data.session) { settled = true; setReady(true); }
+    })();
+    const timeout = window.setTimeout(() => {
+      if (!settled) { toast.error("Invalid or expired reset link."); router.push("/login"); }
+    }, 5000);
+    return () => { listener.subscription.unsubscribe(); window.clearTimeout(timeout); };
+  }, [router, supabase.auth]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,8 +74,7 @@ export default function ResetPasswordPage() {
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-2">
               New Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="8+ characters"
@@ -82,8 +87,7 @@ export default function ResetPasswordPage() {
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-2">
               Confirm Password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder="Repeat password"

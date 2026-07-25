@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { runClientTriage, SYMPTOM_OPTIONS, COMORBIDITY_OPTIONS, type TriageInput } from "@zambuko/triage";
 import { Card, CardBody, CardHeader, Button, TriageBadge } from "@zambuko/ui";
 import type { ConsultationType, MedicalSpecialty } from "@zambuko/database";
+import { createClient } from "@zambuko/database/client";
 
 type Step = "complaint" | "symptoms" | "vitals" | "result";
 
@@ -56,6 +57,7 @@ const DURATION_OPTIONS = [
 
 export default function TriagePage() {
   const router = useRouter();
+  const detailsRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<Step>("complaint");
 
   // Form state
@@ -72,11 +74,28 @@ export default function TriagePage() {
 
   const [triageOutput, setTriageOutput] = useState<ReturnType<typeof runClientTriage> | null>(null);
 
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from("profiles").select("date_of_birth,low_bandwidth_mode").eq("id", user.id).single();
+      if (data?.date_of_birth) {
+        const dob = new Date(data.date_of_birth);
+        const now = new Date();
+        let calculatedAge = now.getFullYear() - dob.getFullYear();
+        if (now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate())) calculatedAge -= 1;
+        if (calculatedAge >= 0 && calculatedAge <= 120) setAge(calculatedAge);
+      }
+      if (data?.low_bandwidth_mode) setConsultType("chat");
+    });
+  }, []);
+
   function selectCategory(cat: typeof COMPLAINT_CATEGORIES[number]) {
     setSelectedCategory(cat);
     setChiefComplaint(cat.preset);
     // Pre-select relevant symptoms
     setSelectedSymptoms(cat.symptoms.filter((s) => SYMPTOM_OPTIONS.some((o) => o.value === s)));
+    window.setTimeout(() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
   }
 
   function toggleSymptom(value: string) {
@@ -179,12 +198,13 @@ export default function TriagePage() {
             </div>
 
             {selectedCategory && (
-              <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-200">
+              <div ref={detailsRef} className="space-y-3 rounded-2xl border border-brand-200 bg-white p-4 shadow-lg animate-in slide-in-from-bottom-2 duration-200 dark:border-brand-800 dark:bg-slate-900">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1">Your Age</label>
-                    <input type="number" min={1} max={120} value={age} onChange={(e) => setAge(Number(e.target.value))}
+                    <input type="number" min={0} max={120} value={age} readOnly aria-readonly="true"
                       className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 text-gray-900" />
+                    <p className="mt-1 text-[11px] text-slate-500">Calculated from your profile date of birth.</p>
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide block mb-1">Started</label>

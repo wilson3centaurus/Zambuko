@@ -1,3 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@layer base {
+  .dark { color-scheme: dark; }
+  body { min-height: 100dvh; }
+}
+@layer utilities {
+  .dark .bg-white { background-color: #0f2027; }
+  .dark .bg-gray-50 { background-color: #071419; }
+  .dark .text-gray-900 { color: #f8fafc; }
+  .dark .text-gray-700 { color: #cbd5e1; }
+  .dark .text-gray-500 { color: #94a3b8; }
+  .dark .border-gray-200 { border-color: #243b45; }
+}

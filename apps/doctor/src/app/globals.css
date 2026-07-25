@@ -7,9 +7,18 @@
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   }
+  .dark { color-scheme: dark; }
+  body { min-height: 100dvh; }
+  .dark body { background: #071419; color: #e2e8f0; }
 }
 
 @layer utilities {
+  .dark .bg-white { background-color: #0f2027; }
+  .dark .bg-gray-50 { background-color: #071419; }
+  .dark .text-gray-900 { color: #f8fafc; }
+  .dark .text-gray-700 { color: #cbd5e1; }
+  .dark .text-gray-500 { color: #94a3b8; }
+  .dark .border-gray-100, .dark .border-gray-200 { border-color: #243b45; }
   .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
   .pt-safe { padding-top: max(0.75rem, env(safe-area-inset-top)); }
 }

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
-import { Button } from "@zambuko/ui";
+import { Button, PasswordInput } from "@zambuko/ui";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -79,9 +79,8 @@ export default function LoginPage() {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"

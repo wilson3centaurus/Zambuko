@@ -56,8 +56,8 @@ export default function PatientsAdminPage() {
               <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-brand-100 flex items-center justify-center text-sm font-bold text-brand-600">
-                      {p.full_name?.charAt(0) ?? "?"}
+                    <div className="w-8 h-8 overflow-hidden rounded-xl bg-brand-100 flex items-center justify-center text-sm font-bold text-brand-600">
+                      {p.avatar_url ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" /> : p.full_name?.charAt(0) ?? "?"}
                     </div>
                     <p className="font-semibold text-gray-900 text-sm">{p.full_name}</p>
                   </div>

@@ -20,7 +20,7 @@ function MetricCard({ label, value, sub, trend }: { label: string; value: string
   const trendColor = trend === "up" ? "text-emerald-500" : trend === "down" ? "text-red-500" : "text-gray-400";
   const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : null;
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-5 flex flex-col gap-2">
+    <div className="flex flex-col gap-2 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900">
       <span className="text-xs font-medium text-gray-500 tracking-wide uppercase">{label}</span>
       <div className="flex items-end gap-2">
         <span className="text-3xl font-semibold text-gray-900 tabular-nums">{value}</span>
@@ -138,11 +138,12 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Page header */}
-      <div className="border-b border-gray-200 bg-white px-8 py-5">
+      <div className="border-b-4 border-brand-500 bg-gradient-to-r from-slate-950 via-brand-950 to-slate-900 px-4 py-7 sm:px-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Overview</h1>
-            <p className="text-sm text-gray-400 mt-0.5">{format(new Date(), "EEEE, d MMMM yyyy")}</p>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-brand-300">Hutano control centre</p>
+            <h1 className="mt-1 text-2xl font-black text-white">Platform operations</h1>
+            <p className="mt-1 text-sm text-slate-400">{format(new Date(), "EEEE, d MMMM yyyy")}</p>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -151,9 +152,9 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="px-8 py-6 space-y-6">
+      <div className="space-y-6 px-4 py-6 sm:px-8">
         {/* KPI grid */}
-        <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <MetricCard label="Doctors" value={stats?.doctors ?? "—"} sub="Registered on platform" />
           <MetricCard label="Patients" value={stats?.patients ?? "—"} sub="All time" />
           <MetricCard label="Consultations" value={stats?.consultations ?? "—"} sub="Total sessions" />

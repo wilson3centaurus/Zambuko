@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
 import { toast } from "sonner";
+import { PasswordInput } from "@zambuko/ui";
 
 function AdminLoginContent() {
   const router = useRouter();
@@ -54,7 +55,8 @@ function AdminLoginContent() {
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-2">Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required
+              autoComplete="current-password"
               className="w-full bg-gray-800 border border-gray-700 text-white rounded-2xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
           </div>
           <button type="submit" disabled={loading || !email || !password}

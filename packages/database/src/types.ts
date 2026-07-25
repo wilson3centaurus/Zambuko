@@ -104,6 +104,10 @@ export interface Patient {
   emergency_contact_relation: string | null;
   insurance_provider: string | null;
   insurance_number: string | null;
+  legal_full_name: string | null;
+  national_id_document_path: string | null;
+  consent_version: string | null;
+  consent_given_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -114,6 +118,8 @@ export interface Dispatcher {
   vehicle_type: string;
   license_plate: string | null;
   organization: string;
+  organization_logo_url: string | null;
+  service_photo_url: string | null;
   status: DispatcherStatus;
   location_lat: number | null;
   location_lng: number | null;

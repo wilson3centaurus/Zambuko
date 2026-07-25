@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
 import { toast } from "sonner";
+import { ImageUpload, PasswordInput } from "@zambuko/ui";
 
 type ProfileData = {
-  profile: { full_name?: string; phone?: string; city?: string } | null;
-  dispatcher: Record<string, unknown> | null;
+  profile: { full_name?: string; phone?: string; city?: string; avatar_url?: string | null } | null;
+  dispatcher: { organization_logo_url?: string | null; service_photo_url?: string | null; organization?: string } | null;
   email: string | undefined;
 };
 
@@ -20,7 +21,7 @@ export default function DispatchProfilePage() {
   const [saving, setSaving] = useState(false);
   const [pwSaving, setPwSaving] = useState(false);
   const [form, setForm] = useState({ full_name: "", phone: "", city: "" });
-  const [pwForm, setPwForm] = useState({ newPassword: "", confirm: "" });
+  const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
 
   const { data } = useQuery<ProfileData>({
     queryKey: ["dispatch-profile"],
@@ -69,10 +70,14 @@ export default function DispatchProfilePage() {
     if (pwForm.newPassword !== pwForm.confirm) { toast.error("Passwords don't match."); return; }
     setPwSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) throw new Error("Your signed-in email could not be verified.");
+      const { error: reauthError } = await supabase.auth.signInWithPassword({ email: user.email, password: pwForm.currentPassword });
+      if (reauthError) throw new Error("Your current password is incorrect.");
       const { error } = await supabase.auth.updateUser({ password: pwForm.newPassword });
       if (error) throw error;
       toast.success("Password changed!");
-      setPwForm({ newPassword: "", confirm: "" });
+      setPwForm({ currentPassword: "", newPassword: "", confirm: "" });
     } catch (err: any) {
       toast.error(err.message ?? "Failed to change password.");
     } finally {
@@ -85,14 +90,33 @@ export default function DispatchProfilePage() {
     router.push("/login");
   }
 
+  async function uploadMedia(file: File, kind: "avatar" | "organization_logo_url" | "service_photo_url") {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Please sign in again.");
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const bucket = kind === "avatar" ? "avatars" : "service-media";
+    const path = `${user.id}/${kind}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+    });
+    if (uploadError) throw uploadError;
+    const { data: url } = supabase.storage.from(bucket).getPublicUrl(path);
+    const publicUrl = `${url.publicUrl}?v=${Date.now()}`;
+    const result = kind === "avatar"
+      ? await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", user.id)
+      : await supabase.from("dispatchers").update({ [kind]: publicUrl }).eq("id", user.id);
+    if (result.error) throw result.error;
+    toast.success("Service media updated.");
+    qc.invalidateQueries({ queryKey: ["dispatch-profile"] });
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 pb-24">
       {/* Header */}
       <div className="bg-slate-900 px-5 pt-8 pb-6 border-b border-slate-800">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-red-600 flex items-center justify-center text-xl font-black text-white">
-            {form.full_name.charAt(0) || "D"}
-          </div>
+        <div className="space-y-4">
+          <ImageUpload label="Upload dispatcher photo" imageUrl={data?.profile?.avatar_url} initials={form.full_name} onUpload={(file) => uploadMedia(file, "avatar")} shape="rounded" />
           <div>
             <h1 className="text-white font-bold text-lg">{form.full_name || "Dispatcher"}</h1>
             <p className="text-slate-400 text-sm">{data?.email}</p>
@@ -103,6 +127,13 @@ export default function DispatchProfilePage() {
 
       {/* Profile form */}
       <form onSubmit={handleSave} className="px-4 py-5 space-y-5">
+        <section className="space-y-4">
+          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Service branding</h2>
+          <div className="space-y-4 rounded-2xl bg-slate-900 p-4">
+            <ImageUpload label="Upload organisation logo" imageUrl={data?.dispatcher?.organization_logo_url} initials={data?.dispatcher?.organization || "ES"} onUpload={(file) => uploadMedia(file, "organization_logo_url")} shape="rounded" />
+            <ImageUpload label="Upload service/vehicle photo" imageUrl={data?.dispatcher?.service_photo_url} initials="🚑" onUpload={(file) => uploadMedia(file, "service_photo_url")} shape="rounded" />
+          </div>
+        </section>
         <section>
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Personal Info</h2>
           <div className="bg-slate-900 rounded-2xl overflow-hidden divide-y divide-slate-800">
@@ -140,13 +171,13 @@ export default function DispatchProfilePage() {
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Change Password</h2>
           <div className="bg-slate-900 rounded-2xl overflow-hidden divide-y divide-slate-800">
             {[
+              { label: "Current", key: "currentPassword" as const, placeholder: "Verify it is you" },
               { label: "New Password", key: "newPassword" as const, placeholder: "8+ characters" },
               { label: "Confirm", key: "confirm" as const, placeholder: "Repeat password" },
             ].map(({ label, key, placeholder }) => (
               <div key={key} className="flex items-center px-4 py-3 gap-3">
                 <label className="text-slate-400 text-sm w-28 shrink-0">{label}</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={pwForm[key]}
                   onChange={(e) => setPwForm((f) => ({ ...f, [key]: e.target.value }))}
                   placeholder={placeholder}

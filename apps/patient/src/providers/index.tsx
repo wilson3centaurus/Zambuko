@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@zambuko/ui";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -38,11 +39,17 @@ function getQueryClient() {
 export function Providers({ children }: { children: ReactNode }) {
   const queryClient = getQueryClient();
 
+  useEffect(() => {
+    const enabled = localStorage.getItem("hutano-low-bandwidth") === "true";
+    document.documentElement.classList.toggle("low-bandwidth", enabled);
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-      <NetworkStatus />
-      <Toaster
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <NetworkStatus />
+        <Toaster
         position="top-center"
         richColors
         closeButton
@@ -50,8 +57,9 @@ export function Providers({ children }: { children: ReactNode }) {
           duration: 4000,
           style: { fontSize: "14px" },
         }}
-      />
-    </QueryClientProvider>
+        />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

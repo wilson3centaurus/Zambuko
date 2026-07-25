@@ -9,6 +9,10 @@
     color-scheme: light;
   }
 
+  .dark {
+    color-scheme: dark;
+  }
+
   html {
     min-width: 320px;
     background: #f8fafc;
@@ -21,6 +25,12 @@
     background: #f8fafc;
     color: #0f172a;
     text-rendering: optimizeLegibility;
+  }
+
+  .dark html,
+  .dark body {
+    background: #071419;
+    color: #e2e8f0;
   }
 
   * {
@@ -43,9 +53,27 @@
   @media (prefers-reduced-motion: no-preference) {
     html { scroll-behavior: smooth; }
   }
+
+  .low-bandwidth *,
+  .low-bandwidth *::before,
+  .low-bandwidth *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .low-bandwidth .data-heavy-visual {
+    display: none !important;
+  }
 }
 
 @layer utilities {
+  .dark .bg-white { background-color: #0f2027; }
+  .dark .bg-gray-50, .dark .bg-slate-50 { background-color: #071419; }
+  .dark .text-gray-900, .dark .text-slate-900 { color: #f8fafc; }
+  .dark .text-gray-800, .dark .text-slate-800 { color: #e2e8f0; }
+  .dark .text-gray-700, .dark .text-slate-700 { color: #cbd5e1; }
+  .dark .text-gray-500, .dark .text-slate-500 { color: #94a3b8; }
+  .dark .border-gray-100, .dark .border-gray-200, .dark .border-slate-200 { border-color: #243b45; }
   .pb-safe {
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }

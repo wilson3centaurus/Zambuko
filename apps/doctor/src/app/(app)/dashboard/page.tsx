@@ -115,10 +115,10 @@ export default function DoctorDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#071419]">
       {/* Header */}
-      <div className="bg-slate-900 px-4 pt-safe py-4">
-        <div className="flex items-center justify-between max-w-lg mx-auto">
+      <div className="overflow-hidden border-b-4 border-orange-400 bg-gradient-to-br from-brand-950 via-brand-900 to-slate-900 px-4 py-7 pt-safe sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div>
             <p className="text-slate-400 text-xs">Good {getGreeting()}</p>
             <p className="text-white font-bold text-lg">Dr. {doctorProfile?.profiles?.full_name?.split(" ")[0] ?? "Doctor"}</p>
@@ -139,13 +139,13 @@ export default function DoctorDashboard() {
         </div>
 
         {/* Stats strip */}
-        <div className="grid grid-cols-3 gap-3 mt-4 max-w-lg mx-auto">
+        <div className="mx-auto mt-6 grid max-w-6xl grid-cols-3 gap-3">
           {[
             { label: "Pending", value: pendingConsults.length, color: "text-amber-400" },
             { label: "Active", value: activeConsults.length, color: "text-sky-400" },
             { label: "Today", value: todayConsults.length, color: "text-green-400" },
           ].map(stat => (
-            <div key={stat.label} className="bg-slate-800 rounded-xl px-3 py-2.5 text-center">
+            <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/10 px-3 py-3 text-center shadow-lg backdrop-blur">
               <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
               <p className="text-slate-400 text-xs">{stat.label}</p>
             </div>
@@ -153,7 +153,7 @@ export default function DoctorDashboard() {
         </div>
       </div>
 
-      <div className="px-4 py-4 space-y-5 max-w-lg mx-auto">
+      <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
         {/* Active consultations */}
         {activeConsults.length > 0 && (
           <section>
@@ -214,7 +214,15 @@ export default function DoctorDashboard() {
               <Card key={c.id}>
                 <CardBody>
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
+                    <div className="flex min-w-0 flex-1 gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-100 font-black text-brand-700">
+                        {(c as any).patient?.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={(c as any).patient.avatar_url} alt="" className="h-full w-full object-cover" />
+                        ) : ((c as any).patient?.full_name?.charAt(0) ?? "P")}
+                      </div>
+                      <div className="min-w-0">
+                      <p className="text-xs font-bold text-brand-700">{(c as any).patient?.full_name ?? "Patient"}</p>
                       <p className="font-bold text-gray-900 text-sm truncate">{c.chief_complaint}</p>
                       <div className="flex items-center gap-2 mt-1">
                         {c.triage_level && <TriageBadge level={c.triage_level as any} />}
@@ -234,6 +242,7 @@ export default function DoctorDashboard() {
                       <p className="text-xs text-gray-400 mt-1">
                         Waiting {formatDistanceToNow(new Date(c.created_at), { addSuffix: true })}
                       </p>
+                      </div>
                     </div>
                     <Button
                       size="sm"

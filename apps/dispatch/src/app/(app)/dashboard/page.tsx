@@ -24,7 +24,7 @@ type Emergency = {
   patient_address: string | null;
   estimated_arrival_minutes: number | null;
   created_at: string;
-  profiles: { full_name: string; phone: string | null } | null;
+  profiles: { full_name: string; phone: string | null; avatar_url?: string | null } | null;
 };
 
 type ActiveDispatch = Emergency & {
@@ -110,7 +110,7 @@ export default function DispatchDashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("emergencies")
-        .select("*, profiles!patient_id(full_name, phone)")
+        .select("*, profiles!patient_id(full_name, phone, avatar_url)")
         .eq("dispatcher_id", userId!)
         .in("status", ["dispatched", "en_route", "arrived"])
         .order("created_at", { ascending: false })
@@ -129,7 +129,7 @@ export default function DispatchDashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("emergencies")
-        .select("*, profiles!patient_id(full_name, phone)")
+        .select("*, profiles!patient_id(full_name, phone, avatar_url)")
         .eq("status", "pending")
         .order("priority", { ascending: false })
         .order("created_at", { ascending: true })
@@ -152,7 +152,7 @@ export default function DispatchDashboard() {
         // Realtime payload doesn't include joined profiles, fetch it
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name, phone")
+          .select("full_name, phone, avatar_url")
           .eq("id", em.patient_id)
           .single();
         em.profiles = profile ?? null;
@@ -244,7 +244,7 @@ export default function DispatchDashboard() {
   });
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)]">
+    <div className="flex h-[calc(100vh-56px)] flex-col bg-slate-950 lg:grid lg:grid-cols-[minmax(0,1fr)_420px]">
 
       {/* ── MAP ───────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 relative">
@@ -262,10 +262,16 @@ export default function DispatchDashboard() {
             {pending!.length} PENDING
           </div>
         )}
+        <div className="absolute right-3 top-3 rounded-2xl border border-slate-700 bg-slate-950/90 px-3 py-2 text-right shadow-xl backdrop-blur">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Unit telemetry</p>
+          <p className={`text-xs font-bold ${dispatcherLat !== null ? "text-emerald-300" : "text-amber-300"}`}>
+            {dispatcherLat !== null ? "GPS live · updating" : "Waiting for GPS permission"}
+          </p>
+        </div>
       </div>
 
       {/* ── BOTTOM PANEL ──────────────────────────────────────── */}
-      <div className="bg-slate-800 border-t border-slate-700">
+      <div className="border-t border-slate-700 bg-slate-900 lg:overflow-y-auto lg:border-l lg:border-t-0">
 
         {/* ACTIVE DISPATCH CARD */}
         {activeDispatch ? (
@@ -317,7 +323,7 @@ export default function DispatchDashboard() {
           </div>
         ) : (
           /* PENDING LIST */
-          <div className="max-h-52 overflow-y-auto divide-y divide-slate-700">
+          <div className="max-h-52 divide-y divide-slate-700 overflow-y-auto lg:max-h-none">
             {(pending ?? []).length === 0 ? (
               <div className="py-6 text-center text-slate-500 text-sm">No pending emergencies</div>
             ) : (
@@ -362,8 +368,8 @@ export default function DispatchDashboard() {
               {/* Patient info */}
               <div className="bg-slate-800 rounded-2xl p-4 space-y-2.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-slate-700 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                    {(alertEmergency.profiles?.full_name ?? "?").charAt(0)}
+                  <div className="w-8 h-8 overflow-hidden rounded-xl bg-slate-700 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                    {alertEmergency.profiles?.avatar_url ? <img src={alertEmergency.profiles.avatar_url} alt="" className="h-full w-full object-cover" /> : (alertEmergency.profiles?.full_name ?? "?").charAt(0)}
                   </div>
                   <div>
                     <p className="text-white text-sm font-bold">{alertEmergency.profiles?.full_name ?? "Unknown Patient"}</p>

@@ -5,24 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
-function useTheme() {
-  const [dark, setDark] = useState(true);
-  useEffect(() => {
-    const saved = localStorage.getItem("zambuko-theme");
-    const isDark = saved !== "light";
-    setDark(isDark);
-    document.documentElement.classList.toggle("dark", isDark);
-  }, []);
-  function toggle() {
-    setDark((d) => {
-      const next = !d;
-      localStorage.setItem("zambuko-theme", next ? "dark" : "light");
-      document.documentElement.classList.toggle("dark", next);
-      return next;
-    });
-  }
-  return { dark, toggle };
-}
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const Icons = {
   dashboard: (
@@ -124,7 +106,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
-  const { dark, toggle } = useTheme();
   const [user, setUser] = useState<{ email: string; name: string } | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -273,16 +254,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {/* Theme toggle */}
-            <button
-              onClick={toggle}
-              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-              title={dark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
-            >
-              {dark ? Icons.sun : Icons.moon}
-            </button>
-
             {/* Bell */}
             <button aria-label="Notifications" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
               {Icons.bell}
@@ -319,13 +290,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                     </svg>
                     Profile & Settings
-                  </button>
-                  <button
-                    onClick={() => { toggle(); setUserMenuOpen(false); }}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
-                  >
-                    <span>{dark ? Icons.sun : Icons.moon}</span>
-                    {dark ? "Light Mode" : "Dark Mode"}
                   </button>
                   <div className="border-t border-gray-700 my-1" />
                   <button

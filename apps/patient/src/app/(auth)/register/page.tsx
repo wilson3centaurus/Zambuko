@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
-import { Button } from "@zambuko/ui";
+import { Button, PasswordInput } from "@zambuko/ui";
 import { toast } from "sonner";
 
 export default function RegisterPage() {
@@ -72,12 +72,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-brand-700 to-brand-900 px-6 py-12">
       {/* Logo */}
       <div className="mb-8 text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/10 backdrop-blur mb-4">
-          <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-        </div>
-        <h1 className="text-3xl font-bold text-white">Hutano</h1>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.svg" alt="Hutano Telehealth" className="mx-auto mb-4 h-16 w-auto rounded-2xl bg-white p-3 shadow-xl" />
+        <h1 className="text-3xl font-bold text-white">Create your Hutano account</h1>
         <p className="mt-1 text-brand-200">Telehealth for Zimbabwe</p>
       </div>
 
@@ -117,9 +114,8 @@ export default function RegisterPage() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={form.password}
               onChange={set("password")}
               autoComplete="new-password"
@@ -132,9 +128,8 @@ export default function RegisterPage() {
 
           <div>
             <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
-            <input
+            <PasswordInput
               id="confirm_password"
-              type="password"
               value={form.confirm_password}
               onChange={set("confirm_password")}
               autoComplete="new-password"

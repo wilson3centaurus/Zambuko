@@ -23,6 +23,15 @@ const EMERGENCY_TYPES: { value: EmergencyType; label: string; emoji: string; des
 
 type Coords = { lat: number; lng: number };
 
+declare global {
+  interface Window {
+    HutanoNative?: {
+      requestQuickSOS: () => void;
+      activateRescueSignal: () => void;
+    };
+  }
+}
+
 export default function EmergencyPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -33,9 +42,12 @@ export default function EmergencyPage() {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeEmergencyId, setActiveEmergencyId] = useState<string | null>(null);
+  const [quickSource, setQuickSource] = useState<string | null>(null);
 
   // Get GPS location
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setQuickSource(params.get("source"));
     if (!navigator.geolocation) {
       setLocationError("GPS not available on this device.");
       return;
@@ -50,6 +62,24 @@ export default function EmergencyPage() {
       { enableHighAccuracy: true, timeout: 8000 }
     );
   }, []);
+
+  function requestBiometricSOS() {
+    if (window.HutanoNative?.requestQuickSOS) {
+      window.HutanoNative.requestQuickSOS();
+    } else {
+      toast.info("Biometric Quick SOS is available in the Hutano Android app. You can still use this confirmed SOS flow.");
+    }
+  }
+
+  function activateRescueSignal() {
+    if (!window.confirm("Make this phone vibrate and play a loud alarm so rescuers can locate you? You can stop it from the Android dialog.")) return;
+    if (window.HutanoNative?.activateRescueSignal) {
+      window.HutanoNative.activateRescueSignal();
+    } else {
+      navigator.vibrate?.([1000, 400, 1000, 400, 1000]);
+      toast.info("Vibration started. Maximum-volume rescue audio is available in the Android app.");
+    }
+  }
 
   // Restore active emergency from localStorage on mount
   useEffect(() => {
@@ -73,7 +103,7 @@ export default function EmergencyPage() {
       if (!activeEmergencyId) return null;
       const { data } = await supabase
         .from("emergencies")
-        .select("*, dispatchers(unit_id, vehicle_type, location_lat, location_lng, profiles(full_name, phone))")
+        .select("*, dispatchers(unit_id, vehicle_type, location_lat, location_lng, organization_logo_url, service_photo_url, profiles(full_name, phone, avatar_url))")
         .eq("id", activeEmergencyId)
         .single();
       return data;
@@ -149,6 +179,11 @@ export default function EmergencyPage() {
         {/* Step 1: Choose type */}
         {step === "type" && (
           <>
+            {quickSource && (
+              <div className="rounded-2xl border border-amber-400 bg-amber-300/15 p-3 text-sm text-amber-100">
+                Quick SOS opened by {quickSource === "shake" ? "three-shake detection" : "biometric verification"}. Confirm what is happening and your detected location before sending.
+              </div>
+            )}
             <div className="text-center py-4">
               <p className="text-red-300 text-sm font-medium uppercase tracking-wider">SELECT EMERGENCY TYPE</p>
               <p className="text-white text-lg font-bold mt-1">What is happening?</p>
@@ -186,6 +221,10 @@ export default function EmergencyPage() {
                   : "bg-red-900 text-red-600 cursor-not-allowed"
               }`}>
               🚨 SOS
+            </button>
+
+            <button onClick={requestBiometricSOS} className="w-full rounded-2xl border border-red-700 bg-red-900/40 py-3 text-sm font-bold text-red-100">
+              ☝ Use fingerprint / phone biometrics for Quick SOS
             </button>
 
             {locationError && (
@@ -363,6 +402,9 @@ export default function EmergencyPage() {
             <a href="tel:994" className="block w-full py-3.5 rounded-2xl bg-white text-red-700 font-bold text-center">
               📞 Call 994 Directly
             </a>
+            <button onClick={activateRescueSignal} className="w-full rounded-2xl border-2 border-amber-400 bg-amber-500 py-3.5 text-center font-black text-amber-950">
+              🔊 Activate rescue sound & vibration
+            </button>
           </div>
         )}
       </div>

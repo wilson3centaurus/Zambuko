@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
-import { Button } from "@zambuko/ui";
+import { Button, PasswordInput } from "@zambuko/ui";
 import { toast } from "sonner";
 
 export default function ResetPasswordPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -15,14 +15,31 @@ export default function ResetPasswordPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-      else {
+    let settled = false;
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN")) {
+        settled = true;
+        setReady(true);
+      }
+    });
+    const code = new URLSearchParams(window.location.search).get("code");
+    const verify = async () => {
+      if (code) await supabase.auth.exchangeCodeForSession(code);
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        settled = true;
+        setReady(true);
+      }
+    };
+    void verify();
+    const timeout = window.setTimeout(() => {
+      if (!settled) {
         toast.error("Invalid or expired reset link.");
         router.push("/login");
       }
-    });
-  }, []);
+    }, 5000);
+    return () => { listener.subscription.unsubscribe(); window.clearTimeout(timeout); };
+  }, [router, supabase.auth]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,9 +85,8 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="pw" className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
-            <input
+            <PasswordInput
               id="pw"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -81,9 +97,8 @@ export default function ResetPasswordPage() {
           </div>
           <div>
             <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
-            <input
+            <PasswordInput
               id="confirm"
-              type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required
