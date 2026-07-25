@@ -22,13 +22,13 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
   if (pathname.startsWith("/api/")) return response;
-  if (!session && !pathname.startsWith("/login") && !pathname.startsWith("/forgot-password") && !pathname.startsWith("/reset-password")) return NextResponse.redirect(new URL("/login", request.url));
-  if (session && pathname === "/login") return NextResponse.redirect(new URL("/dashboard", request.url));
-  if (session && !pathname.startsWith("/login")) {
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
+  if (!user && !pathname.startsWith("/login") && !pathname.startsWith("/forgot-password") && !pathname.startsWith("/reset-password")) return NextResponse.redirect(new URL("/login", request.url));
+  if (user && pathname === "/login") return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (user && !pathname.startsWith("/login")) {
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
     if (profile?.role !== "dispatcher") return NextResponse.redirect(new URL("/login?error=unauthorized", request.url));
   }
   return response;

@@ -19,6 +19,10 @@ supabase/.temp
 # Build outputs
 build
 *.tsbuildinfo
+.gradle
+local.properties
+*.apk
+*.aab
 
 # OS
 .DS_Store
@@ -44,3 +48,5 @@ public/worker-*.js
 # Test coverage
 coverage
 .nyc_output
+test-results
+playwright-report

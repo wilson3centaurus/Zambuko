@@ -9,15 +9,15 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function Card({ variant = "default", clickable = false, className, children, ...props }: CardProps) {
-  const base = "bg-white rounded-2xl overflow-hidden";
+  const base = "bg-white rounded-xl overflow-hidden";
   const variants = {
-    default: "shadow-card",
+    default: "border border-slate-200/80 shadow-card",
     bordered: "border border-gray-200",
     elevated: "shadow-card-hover",
   };
   return (
     <div
-      className={cn(base, variants[variant], clickable && "cursor-pointer hover:shadow-card-hover transition-shadow duration-200", className)}
+      className={cn(base, variants[variant], clickable && "cursor-pointer hover:border-brand-200 hover:shadow-card-hover transition-all duration-200", className)}
       {...props}
     >
       {children}

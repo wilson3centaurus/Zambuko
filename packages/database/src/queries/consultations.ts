@@ -51,7 +51,8 @@ export async function getPatientConsultations(supabase: SupabaseClient, patientI
   const { data, error } = await supabase
     .from("consultations")
     .select(`
-      id, status, type, triage_level, chief_complaint,
+      id, doctor_id, status, type, triage_level, chief_complaint,
+      diagnosis, follow_up_date, patient_rating,
       started_at, ended_at, duration_minutes, created_at,
       doctor:profiles!doctor_id(id, full_name, avatar_url)
     `)
@@ -154,13 +155,15 @@ export async function rateConsultation(
     patientId: string;
     rating: 1 | 2 | 3 | 4 | 5;
     review?: string;
+    isAnonymous?: boolean;
   }
 ) {
   // Update consultation rating
-  await supabase
+  const { error: consultationError } = await supabase
     .from("consultations")
     .update({ patient_rating: params.rating, patient_review: params.review })
     .eq("id", params.consultationId);
+  if (consultationError) throw consultationError;
 
   // Insert detailed rating record
   const { error } = await supabase.from("doctor_ratings").insert({
@@ -169,6 +172,7 @@ export async function rateConsultation(
     patient_id: params.patientId,
     rating: params.rating,
     review: params.review,
+    is_anonymous: params.isAnonymous ?? false,
   });
-  if (error && !error.message.includes("unique")) throw error; // ignore duplicate
+  if (error && error.code !== "23505") throw error;
 }

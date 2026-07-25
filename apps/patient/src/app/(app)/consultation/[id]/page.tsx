@@ -59,8 +59,7 @@ export default function ConsultationPage() {
         schema: "public",
         table: "consultations",
         filter: `id=eq.${id}`,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }, (payload: any) => {
+      }, (payload) => {
         if (payload.new?.status === "accepted") {
           toast.success("Your doctor has accepted your consultation! You can now start chatting.");
         } else if (payload.new?.status === "active") {
@@ -157,6 +156,9 @@ export default function ConsultationPage() {
   const isAccepted = consultation.status === "accepted";
   const isActive = consultation.status === "active";
   const isCompleted = ["completed", "cancelled", "no_show"].includes(consultation.status);
+  const assignedDoctor = (consultation as typeof consultation & {
+    doctor?: { full_name?: string | null } | null;
+  }).doctor;
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col">
@@ -169,8 +171,7 @@ export default function ConsultationPage() {
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm truncate">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {(consultation as any).doctor?.full_name ? `Dr. ${(consultation as any).doctor.full_name}` : "Awaiting Doctor"}
+            {assignedDoctor?.full_name ? `Dr. ${assignedDoctor.full_name}` : "Awaiting Doctor"}
           </p>
           <p className="text-xs text-gray-400 capitalize">{consultation.status.replace("_", " ")}</p>
         </div>
@@ -228,8 +229,7 @@ export default function ConsultationPage() {
       {isAccepted && (
         <div className="bg-teal-900/40 border-b border-teal-700/50 px-4 py-3 flex items-center gap-2">
           <div className="w-2 h-2 bg-teal-400 rounded-full" />
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <p className="text-teal-300 text-sm">✅ {(consultation as any).doctor?.full_name ? `Dr. ${(consultation as any).doctor.full_name} has accepted` : "Doctor accepted"} — you can start chatting!</p>
+          <p className="text-teal-300 text-sm">✅ {assignedDoctor?.full_name ? `Dr. ${assignedDoctor.full_name} has accepted` : "Doctor accepted"} — you can start chatting!</p>
         </div>
       )}
       {isCompleted && (

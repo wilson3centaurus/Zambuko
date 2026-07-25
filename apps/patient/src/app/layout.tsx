@@ -1,10 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/providers";
 import { OfflineBanner } from "@zambuko/ui";
-
-const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: {
@@ -28,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F07038",
+  themeColor: "#1A6E7E",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -45,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
-      <body className={`${inter.className} h-full bg-gray-50 antialiased`}>
+      <body className="h-full bg-gray-50 font-sans antialiased">
         <Providers>
           <OfflineBanner className="fixed top-0 left-0 right-0 z-50" />
           {children}

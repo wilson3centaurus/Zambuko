@@ -1,10 +1,9 @@
 /**
- * Paynow mobile money integration wrapper.
- * Uses the official paynow SDK so hash computation is handled correctly.
+ * Paynow mobile-money integration wrapper.
+ * All credentials and provider responses remain server-side.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { Paynow } = require("paynow");
+import { Paynow } from "paynow";
 
 export type MobileProvider = "ecocash" | "telecash" | "onemoney";
 
@@ -16,12 +15,17 @@ export interface MobilePaymentResult {
 }
 
 function getClient() {
-  const client = new Paynow(
-    process.env.PAYNOW_INTEGRATION_ID!,
-    process.env.PAYNOW_INTEGRATION_KEY!,
-  );
-  client.resultUrl = process.env.PAYNOW_RESULT_URL!;
-  client.returnUrl = process.env.PAYNOW_RETURN_URL!;
+  const integrationId = process.env.PAYNOW_INTEGRATION_ID;
+  const integrationKey = process.env.PAYNOW_INTEGRATION_KEY;
+  const resultUrl = process.env.PAYNOW_RESULT_URL;
+  const returnUrl = process.env.PAYNOW_RETURN_URL;
+  if (!integrationId || !integrationKey || !resultUrl || !returnUrl) {
+    throw new Error("Paynow is not configured.");
+  }
+
+  const client = new Paynow(integrationId, integrationKey);
+  client.resultUrl = resultUrl;
+  client.returnUrl = returnUrl;
   return client;
 }
 
@@ -37,21 +41,7 @@ export async function initiateMobilePayment(opts: {
   const payment = client.createPayment(opts.reference, opts.email);
   payment.add(opts.description, opts.amount);
 
-  console.log("[paynow/sdk] initiating mobile payment:", {
-    reference: opts.reference,
-    email: opts.email,
-    phone: opts.phone,
-    amount: opts.amount,
-    method: opts.method,
-    resultUrl: client.resultUrl,
-    returnUrl: client.returnUrl,
-    integrationId: process.env.PAYNOW_INTEGRATION_ID,
-  });
-
   const response = await client.sendMobile(payment, opts.phone, opts.method);
-
-  console.log("[paynow/sdk] raw response:", JSON.stringify(response));
-
   if (response.success) {
     return {
       success: true,
@@ -65,4 +55,3 @@ export async function initiateMobilePayment(opts: {
     error: response.error || "Payment initiation failed",
   };
 }
-

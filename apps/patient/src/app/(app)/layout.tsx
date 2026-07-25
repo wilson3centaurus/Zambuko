@@ -1,59 +1,42 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
 import { cn } from "@zambuko/ui";
 import { toast } from "sonner";
 
-const NAV = [
-  {
-    href: "/dashboard",
-    label: "Home",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-  },
-  {
-    href: "/triage",
-    label: "Consult",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/emergency",
-    label: "Emergency",
-    icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-      </svg>
-    ),
-    isEmergency: true,
-  },
-  {
-    href: "/prescriptions",
-    label: "Prescriptions",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/profile",
-    label: "Profile",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: "home" | "consult" | "emergency" | "history" | "profile";
+  emergency?: boolean;
+};
+
+const NAV: NavItem[] = [
+  { href: "/dashboard", label: "Home", icon: "home" },
+  { href: "/triage", label: "Consult", icon: "consult" },
+  { href: "/emergency", label: "Emergency", icon: "emergency", emergency: true },
+  { href: "/history", label: "History", icon: "history" },
+  { href: "/profile", label: "Profile", icon: "profile" },
 ];
+
+function NavIcon({ name, className = "h-5 w-5" }: { name: NavItem["icon"]; className?: string }) {
+  const paths = {
+    home: <path strokeLinecap="round" strokeLinejoin="round" d="M3 10.75 12 3l9 7.75M5.25 9.5v10.25h5v-6h3.5v6h5V9.5" />,
+    consult: <path strokeLinecap="round" strokeLinejoin="round" d="M9 5.25h6M9 9h6m-6 3.75h3.75M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />,
+    emergency: <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.75v8.5m0 4v.1M10.3 2.9 2.5 17a2 2 0 0 0 1.75 3h15.5a2 2 0 0 0 1.75-3L13.7 2.9a1.95 1.95 0 0 0-3.4 0Z" />,
+    history: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12a8.25 8.25 0 1 0 2.42-5.83L3.75 8.6m0-4.85V8.6H8.6M12 7.5V12l3 1.75" />,
+    profile: <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 7.5a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0" />,
+  };
+
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  );
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -62,44 +45,88 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    toast.success("Signed out");
+    toast.success("Signed out securely");
     router.replace("/login");
   }
 
-  return (
-    <div className="flex flex-col min-h-screen">
-      {/* Main content — leaves room for bottom nav */}
-      <main className="flex-1 pb-20">
-        {children}
-      </main>
+  function isActive(href: string) {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
 
-      {/* Mobile bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg pb-safe z-40">
-        <div className="flex items-end justify-around h-16">
+  return (
+    <div className="min-h-app bg-slate-50 lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
+      <aside className="hidden lg:flex lg:sticky lg:top-0 lg:h-screen lg:flex-col border-r border-slate-200 bg-white px-4 py-5">
+        <Link href="/dashboard" className="flex items-center gap-3 rounded-lg px-2 py-1">
+          <Image src="/logo.svg" alt="Hutano" width={132} height={36} priority className="h-9 w-auto" />
+        </Link>
+
+        <p className="mt-6 px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Patient care</p>
+        <nav aria-label="Patient navigation" className="mt-2 space-y-1">
           {NAV.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors",
-                  item.isEmergency
-                    ? "relative -top-3"
-                    : isActive
-                    ? "text-brand-600"
-                    : "text-gray-400 hover:text-gray-600"
+                  "flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-colors",
+                  item.emergency
+                    ? active ? "bg-red-50 text-red-700" : "text-red-700 hover:bg-red-50"
+                    : active ? "bg-brand-50 text-brand-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 )}
-                aria-label={item.label}
               >
-                {item.isEmergency ? (
-                  <div className="w-14 h-14 rounded-full bg-emergency-600 flex items-center justify-center shadow-emergency text-white">
-                    {item.icon}
-                  </div>
+                <NavIcon name={item.icon} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="mt-auto rounded-xl border border-brand-100 bg-brand-50 p-3">
+          <div className="flex items-center gap-2 text-brand-800">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3 5.5 5.5v5.8c0 4.1 2.75 7.9 6.5 9.2 3.75-1.3 6.5-5.1 6.5-9.2V5.5L12 3Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="m9.5 12 1.7 1.7 3.6-4" />
+            </svg>
+            <span className="text-xs font-bold">Private and secure</span>
+          </div>
+          <p className="mt-1 text-[11px] leading-4 text-brand-700">Your medical activity is protected and only shared with authorised care teams.</p>
+        </div>
+
+        <button onClick={handleSignOut} className="mt-3 min-h-10 rounded-lg px-3 text-left text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800">
+          Sign out
+        </button>
+      </aside>
+
+      <main className="min-w-0 pb-24 lg:pb-0">{children}</main>
+
+      <nav aria-label="Patient navigation" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-safe shadow-[0_-8px_30px_-24px_rgba(15,23,42,0.5)] backdrop-blur lg:hidden">
+        <div className="mx-auto flex h-16 max-w-lg items-end justify-around">
+          {NAV.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-label={item.label}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex h-full flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold",
+                  item.emergency ? "relative -top-2" : active ? "text-brand-700" : "text-slate-400"
+                )}
+              >
+                {item.emergency ? (
+                  <>
+                    <span className="grid h-12 w-12 place-items-center rounded-full bg-red-700 text-white shadow-lg ring-4 ring-white">
+                      <NavIcon name="emergency" className="h-6 w-6" />
+                    </span>
+                    <span className="sr-only">{item.label}</span>
+                  </>
                 ) : (
                   <>
-                    {item.icon}
-                    <span className="text-[10px] font-medium">{item.label}</span>
+                    <NavIcon name={item.icon} className="h-5 w-5" />
+                    <span>{item.label}</span>
                   </>
                 )}
               </Link>

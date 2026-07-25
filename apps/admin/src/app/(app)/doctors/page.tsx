@@ -518,14 +518,14 @@ export default function DoctorsAdminPage() {
         body: JSON.stringify({ userId }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Delete failed");
+      if (!res.ok) throw new Error(json.error ?? "Archive failed");
     },
     onSuccess: () => {
-      toast.success("Doctor deleted.");
+      toast.success("Doctor account archived. Clinical records were retained.");
       qc.invalidateQueries({ queryKey: ["admin-doctors"] });
       setConfirmDelete(null);
     },
-    onError: (err: any) => toast.error(err.message ?? "Delete failed."),
+    onError: (err: any) => toast.error(err.message ?? "Archive failed."),
   });
 
   const filtered = doctors.filter((d: any) => {
@@ -539,7 +539,7 @@ export default function DoctorsAdminPage() {
       {showAdd && <AddDoctorModal onClose={() => setShowAdd(false)} />}
       {editDoc && <EditDoctorModal doc={editDoc} onClose={() => setEditDoc(null)} />}
 
-      {/* Delete confirm */}
+      {/* Archive confirmation */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center space-y-4">
@@ -548,9 +548,9 @@ export default function DoctorsAdminPage() {
                 <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <h2 className="text-lg font-bold text-white">Delete Doctor?</h2>
+            <h2 className="text-lg font-bold text-white">Archive doctor account?</h2>
             <p className="text-sm text-gray-400">
-              Permanently delete <span className="font-semibold text-white">{confirmDelete.profiles?.full_name}</span> and all their data? This cannot be undone.
+              Disable access for <span className="font-semibold text-white">{confirmDelete.profiles?.full_name}</span>? Their consultations, prescriptions, and audit history will be retained.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDelete(null)}
@@ -559,7 +559,7 @@ export default function DoctorsAdminPage() {
               </button>
               <button onClick={() => deleteMutation.mutate(confirmDelete.id)} disabled={deleteMutation.isPending}
                 className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors">
-                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                {deleteMutation.isPending ? "Archiving..." : "Archive account"}
               </button>
             </div>
           </div>
@@ -676,7 +676,7 @@ export default function DoctorsAdminPage() {
                         </svg>
                       </button>
                       <button onClick={() => setConfirmDelete(doc)}
-                        className="p-1.5 rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/70 transition-colors" title="Delete">
+                        className="p-1.5 rounded-lg bg-red-900/40 text-red-400 hover:bg-red-900/70 transition-colors" title="Archive account">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>

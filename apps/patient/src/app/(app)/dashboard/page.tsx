@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
@@ -12,7 +12,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import type { Profile } from "@zambuko/database";
 
 export default function DashboardPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const qc = useQueryClient();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -33,7 +33,8 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user;
       if (user) {
         supabase
           .from("profiles")
@@ -58,7 +59,8 @@ export default function DashboardPage() {
   const { data: consultations = [], isLoading: consultLoading } = useQuery({
     queryKey: ["patient-consultations"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return [];
       return getPatientConsultations(supabase, user.id);
     },
@@ -68,10 +70,27 @@ export default function DashboardPage() {
   const { data: emergencies = [] } = useQuery({
     queryKey: ["patient-emergencies"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return [];
       return getPatientEmergencies(supabase, user.id);
     },
+  });
+
+  const { data: unreadNotifications = 0 } = useQuery({
+    queryKey: ["patient-notifications", "unread-count"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) return 0;
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+      return count ?? 0;
+    },
+    refetchInterval: 30_000,
   });
 
   // Live active emergency (from localStorage ID or most recent non-resolved emergency)
@@ -102,15 +121,29 @@ export default function DashboardPage() {
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-app bg-slate-50">
       {/* Header */}
-      <div className="bg-gradient-to-br from-brand-700 to-brand-900 px-5 pt-12 pb-8">
-        <p className="text-brand-200 text-sm">{greeting},</p>
-        <h1 className="text-2xl font-bold text-white mt-0.5">{firstName} 👋</h1>
-        <p className="text-brand-200 text-sm mt-1">How are you feeling today?</p>
+      <div className="border-b-4 border-accent-500 bg-brand-900 px-5 pb-8 pt-9 lg:px-8 lg:pb-10 lg:pt-10">
+        <div className="mx-auto flex max-w-5xl items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-brand-200">{greeting},</p>
+            <h1 className="mt-1 text-2xl font-bold text-white lg:text-3xl">{firstName}</h1>
+            <p className="mt-1 text-sm text-brand-100">How are you feeling today?</p>
+          </div>
+          <Link href="/notifications" aria-label={`${unreadNotifications} unread notifications`} className="relative grid h-11 w-11 place-items-center rounded-lg border border-white/15 bg-white/10 text-white hover:bg-white/15">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" />
+            </svg>
+            {unreadNotifications > 0 && (
+              <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-accent-500 px-1 text-[10px] font-black text-white ring-2 ring-brand-900">
+                {unreadNotifications > 9 ? "9+" : unreadNotifications}
+              </span>
+            )}
+          </Link>
+        </div>
       </div>
 
-      <div className="px-4 -mt-4 space-y-4 pb-4">
+      <div className="mx-auto -mt-4 max-w-5xl space-y-4 px-4 pb-6 lg:px-8">
         {/* Active emergency banner */}
         {liveEmergency && !["resolved", "cancelled"].includes(liveEmergency.status) && (
           <div className={`rounded-2xl p-4 border-2 space-y-3 ${
@@ -202,7 +235,7 @@ export default function DashboardPage() {
         )}
 
         {/* Quick actions */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Link href="/triage" className="block">
             <Card clickable className="h-full">
               <CardBody className="flex flex-col items-center text-center py-5">
@@ -245,17 +278,19 @@ export default function DashboardPage() {
             </Card>
           </Link>
 
-          <Card className="h-full">
-            <CardBody className="flex flex-col items-center text-center py-5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center mb-3">
-                <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <p className="font-semibold text-gray-900 text-sm">Appointments</p>
-              <p className="text-xs text-gray-500 mt-0.5">Scheduled sessions</p>
-            </CardBody>
-          </Card>
+          <Link href="/history?filter=upcoming" className="block">
+            <Card clickable className="h-full">
+              <CardBody className="flex flex-col items-center text-center py-5">
+                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center mb-3">
+                  <svg className="w-7 h-7 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <p className="font-semibold text-gray-900 text-sm">Appointments</p>
+                <p className="text-xs text-gray-500 mt-0.5">Upcoming and past care</p>
+              </CardBody>
+            </Card>
+          </Link>
         </div>
 
         {/* Recent consultations */}

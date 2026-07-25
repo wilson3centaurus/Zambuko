@@ -1,10 +1,8 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
-import { setupConnectivitySync } from "@zambuko/offline";
-import { createClient } from "@zambuko/database/client";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -39,24 +37,11 @@ function getQueryClient() {
 
 export function Providers({ children }: { children: ReactNode }) {
   const queryClient = getQueryClient();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-
-    // Set up offline sync when user is authenticated
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        const cleanup = setupConnectivitySync(supabase, user.id);
-        return cleanup;
-      }
-    });
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       {children}
+      <NetworkStatus />
       <Toaster
         position="top-center"
         richColors
@@ -67,5 +52,28 @@ export function Providers({ children }: { children: ReactNode }) {
         }}
       />
     </QueryClientProvider>
+  );
+}
+
+function NetworkStatus() {
+  const [online, setOnline] = useState(true);
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
+  if (online) return null;
+
+  return (
+    <div role="status" className="fixed inset-x-3 top-3 z-[100] mx-auto max-w-md rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-950 shadow-lg">
+      You’re offline. Emergency requests, bookings, payments, and pharmacy actions require a connection.
+    </div>
   );
 }

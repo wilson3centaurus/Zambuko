@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@zambuko/database/client";
 import { Toaster } from "sonner";
 
@@ -15,9 +15,25 @@ const STATUS_CONFIG: Record<DispatcherStatus, { label: string; color: string; do
   offline:    { label: "Offline",    color: "bg-slate-600",   dot: "bg-slate-500"   },
 };
 
+type NavIcon = "dashboard" | "history" | "profile";
+
+function Icon({ name, className = "h-5 w-5" }: { name: NavIcon; className?: string }) {
+  const paths = {
+    dashboard: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 11.25 12 3l8.25 8.25M5.25 9.75v10.5h13.5V9.75M9.5 20.25v-6.5h5v6.5" />,
+    history: <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12a8.25 8.25 0 1 0 2.42-5.83L3.75 8.6m0-4.85V8.6H8.6M12 7.5V12l3 1.75" />,
+    profile: <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 7.5a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0" />,
+  };
+
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  );
+}
+
 export default function DispatchAppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [status, setStatus] = useState<DispatcherStatus>("offline");
   const [userId, setUserId] = useState<string | null>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
@@ -94,14 +110,21 @@ export default function DispatchAppLayout({ children }: { children: React.ReactN
       {/* Top bar */}
       <header className="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🚑</span>
-          <span className="font-black text-red-400 tracking-wide text-sm">HUTANO DISPATCH</span>
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-red-700 text-white">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h11v10H3V7Zm11 3h3.5l3 3v4H14v-7ZM7 10v4m-2-2h4m-3 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm11 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+            </svg>
+          </span>
+          <div>
+            <span className="block text-sm font-black tracking-wide text-white">HUTANO DISPATCH</span>
+            <span className="block text-[10px] font-semibold text-slate-400">Emergency response</span>
+          </div>
         </div>
 
         {/* Status pill */}
         <div className="relative group">
-          <button className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${cfg.color}`}>
-            <span className={`w-2 h-2 rounded-full ${cfg.dot} animate-pulse`} />
+          <button aria-label={`Responder status: ${cfg.label}`} className={`flex min-h-10 items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-bold ${cfg.color}`}>
+            <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
             {cfg.label}
           </button>
           {/* Dropdown */}
@@ -123,15 +146,15 @@ export default function DispatchAppLayout({ children }: { children: React.ReactN
       {/* Bottom nav */}
       <nav className="fixed bottom-0 inset-x-0 bg-slate-800 border-t border-slate-700 flex z-40">
         {[
-          { href: "/dashboard", label: "Dashboard", icon: "🗺️" },
-          { href: "/history", label: "History", icon: "📋" },
-          { href: "/profile", label: "Profile", icon: "👤" },
+          { href: "/dashboard", label: "Dashboard", icon: "dashboard" as NavIcon },
+          { href: "/history", label: "History", icon: "history" as NavIcon },
+          { href: "/profile", label: "Profile", icon: "profile" as NavIcon },
         ].map(({ href, label, icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link key={href} href={href}
               className={`flex-1 flex flex-col items-center py-2.5 text-xs font-semibold transition-colors ${active ? "text-red-400" : "text-slate-500 hover:text-slate-300"}`}>
-              <span className="text-xl mb-0.5">{icon}</span>
+              <Icon name={icon} />
               {label}
             </Link>
           );

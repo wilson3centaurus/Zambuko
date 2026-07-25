@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/server/require-admin";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -9,10 +10,24 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
  * Updates auth email and/or password for any user via service role.
  */
 export async function PATCH(req: NextRequest) {
-  const { userId, email, password } = await req.json();
+  const authorization = await requireAdmin();
+  if ("response" in authorization) return authorization.response;
+
+  let payload: { userId?: string; email?: string; password?: string };
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+  const userId = payload.userId;
+  const email = payload.email?.trim().toLowerCase();
+  const password = payload.password;
 
   if (!userId || (!email && !password)) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+  if (password && password.length < 8) {
+    return NextResponse.json({ error: "Password must contain at least 8 characters." }, { status: 400 });
   }
 
   const body: Record<string, string> = {};

@@ -22,18 +22,18 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  if (!session && !pathname.startsWith("/login") && !pathname.startsWith("/forgot-password") && !pathname.startsWith("/reset-password")) {
+  if (!user && !pathname.startsWith("/login") && !pathname.startsWith("/forgot-password") && !pathname.startsWith("/reset-password")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  if (session && pathname === "/login") {
+  if (user && pathname === "/login") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
   // Enforce admin role
-  if (session && !pathname.startsWith("/login")) {
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
+  if (user && !pathname.startsWith("/login")) {
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
     if (profile?.role !== "admin") return NextResponse.redirect(new URL("/login?error=unauthorized", request.url));
   }
   return response;

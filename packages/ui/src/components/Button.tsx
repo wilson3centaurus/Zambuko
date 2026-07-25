@@ -19,7 +19,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]";
+    "inline-flex items-center justify-center font-semibold rounded-lg transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px";
 
   const variants = {
     primary:
@@ -29,15 +29,15 @@ export function Button({
     ghost:
       "text-brand-700 hover:bg-brand-50 focus-visible:ring-brand-400",
     danger:
-      "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500 shadow-sm",
+      "bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-500 shadow-sm",
     emergency:
-      "bg-emergency-600 text-white hover:bg-emergency-700 focus-visible:ring-emergency-500 shadow-emergency animate-pulse-emergency",
+      "bg-emergency-600 text-white hover:bg-emergency-700 focus-visible:ring-emergency-500 shadow-emergency",
   };
 
   const sizes = {
-    sm: "text-sm px-3 py-1.5 gap-1.5",
-    md: "text-base px-4 py-2.5 gap-2",
-    lg: "text-lg px-6 py-3.5 gap-2.5",
+    sm: "min-h-9 text-sm px-3 py-1.5 gap-1.5",
+    md: "min-h-11 text-sm px-4 py-2.5 gap-2",
+    lg: "min-h-12 text-base px-6 py-3 gap-2.5",
   };
 
   return (

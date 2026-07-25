@@ -1,61 +1,88 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-/** Helper: call Supabase REST API with service role */
-async function pgPatch(table: string, set: Record<string, unknown>, matchCol: string, matchVal: string) {
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/${table}?${matchCol}=eq.${encodeURIComponent(matchVal)}`,
-    {
-      method: "PATCH",
-      headers: {
-        "apikey": SERVICE_ROLE_KEY,
-        "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal",
-      },
-      body: JSON.stringify(set),
-    }
-  );
-  return res;
-}
+import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/server/require-admin";
 
 /**
  * DELETE /api/admin/delete-user
- * Body: { userId }
- * Nullifies FK references then hard-deletes the user from Supabase auth.
+ *
+ * Healthcare records are retained for auditability. This endpoint archives
+ * the profile and blocks authentication instead of deleting linked clinical
+ * records or the auth identity.
  */
 export async function DELETE(req: NextRequest) {
-  const { userId } = await req.json();
+  const authorization = await requireAdmin();
+  if ("response" in authorization) return authorization.response;
 
+  let payload: { userId?: string };
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  const userId = payload.userId;
   if (!userId) {
     return NextResponse.json({ error: "Missing userId" }, { status: 400 });
   }
-
-  // Nullify all FK references before deleting the profile/auth user
-  await Promise.all([
-    pgPatch("consultations", { doctor_id: null }, "doctor_id", userId),
-    pgPatch("prescriptions", { doctor_id: null }, "doctor_id", userId),
-    pgPatch("emergencies", { dispatcher_id: null }, "dispatcher_id", userId),
-  ]);
-
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-    method: "DELETE",
-    headers: {
-      "apikey": SERVICE_ROLE_KEY,
-      "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
-    },
-  });
-
-  if (!res.ok) {
-    let msg = "Delete failed";
-    try {
-      const json = await res.json();
-      msg = json?.msg ?? json?.error_description ?? json?.message ?? msg;
-    } catch {}
-    return NextResponse.json({ error: msg }, { status: res.status });
+  if (userId === authorization.user.id) {
+    return NextResponse.json({ error: "You cannot archive your own administrator account." }, { status: 409 });
   }
 
-  return NextResponse.json({ ok: true });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    return NextResponse.json({ error: "Administration service is not configured." }, { status: 503 });
+  }
+
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("id, role")
+    .eq("id", userId)
+    .single();
+  if (profileError || !profile) {
+    return NextResponse.json({ error: "User not found." }, { status: 404 });
+  }
+
+  const { error: archiveError } = await admin
+    .from("profiles")
+    .update({ is_active: false })
+    .eq("id", userId);
+  if (archiveError) {
+    return NextResponse.json({ error: "The account could not be archived." }, { status: 500 });
+  }
+
+  if (profile.role === "doctor") {
+    await admin.from("doctors").update({ status: "offline" }).eq("id", userId);
+  } else if (profile.role === "dispatcher") {
+    await admin.from("dispatchers").update({ status: "offline" }).eq("id", userId);
+  }
+
+  const authResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${userId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": serviceRoleKey,
+      "Authorization": `Bearer ${serviceRoleKey}`,
+    },
+    body: JSON.stringify({ ban_duration: "876000h" }),
+  });
+
+  if (!authResponse.ok) {
+    await admin.from("profiles").update({ is_active: true }).eq("id", userId);
+    return NextResponse.json({ error: "The account login could not be disabled." }, { status: 502 });
+  }
+
+  await admin.from("audit_logs").insert({
+    user_id: authorization.user.id,
+    action: "account_archived",
+    table_name: "profiles",
+    record_id: userId,
+    new_data: { is_active: false, archived_role: profile.role },
+  });
+
+  return NextResponse.json({ ok: true, archived: true });
 }

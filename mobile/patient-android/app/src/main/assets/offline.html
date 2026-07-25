@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Hutano — Offline</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, -apple-system, sans-serif; }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      color: #1f2937;
+      background: #f9fafb;
+      text-align: center;
+    }
+    main { max-width: 360px; }
+    .mark {
+      width: 72px;
+      height: 72px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 24px;
+      border-radius: 18px;
+      background: #1a6e7e;
+      color: white;
+      font-size: 36px;
+      font-weight: 800;
+    }
+    h1 { margin: 0 0 10px; font-size: 24px; }
+    p { margin: 0 0 24px; color: #6b7280; line-height: 1.55; }
+    button {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 12px;
+      background: #155967;
+      color: white;
+      font: inherit;
+      font-weight: 700;
+    }
+    .urgent { margin-top: 18px; font-size: 13px; color: #4b5563; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark" aria-hidden="true">+</div>
+    <h1>You’re offline</h1>
+    <p>Reconnect to continue securely. Bookings, payments, prescriptions, and emergency requests are only confirmed when the server responds.</p>
+    <button type="button" onclick="location.replace('https://zambuko-patient.vercel.app/')">Try again</button>
+    <p class="urgent">For a life-threatening emergency, contact your local emergency service directly.</p>
+  </main>
+</body>
+</html>

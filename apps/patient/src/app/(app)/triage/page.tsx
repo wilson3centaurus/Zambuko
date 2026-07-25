@@ -155,7 +155,7 @@ export default function TriagePage() {
         {step === "complaint" && (
           <div className="space-y-5 animate-fade-in">
             <div>
-              <h2 className="text-xl font-black text-gray-900">What's the matter?</h2>
+              <h2 className="text-xl font-black text-gray-900">What&apos;s the matter?</h2>
               <p className="text-sm text-gray-500 mt-1">Choose the best description of your issue.</p>
             </div>
 

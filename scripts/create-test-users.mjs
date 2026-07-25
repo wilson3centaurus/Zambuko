@@ -1,13 +1,16 @@
 /**
  * One-time script to create test users in cloud Supabase.
- * Run: node scripts/create-test-users.mjs
+ * Run: node --env-file=.env scripts/create-test-users.mjs
  */
 
 import https from "https";
 
-const HOST = "lkndeccqexejflcgkwiy.supabase.co";
-const SERVICE_ROLE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrbmRlY2NxZXhlamZsY2drd2l5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE2NzYyOCwiZXhwIjoyMDkwNzQzNjI4fQ.XPFbmMv7PgKBc1DvWIX0y3yMMaqmwOUUJG0IFaj9S34";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
+}
+const HOST = new URL(SUPABASE_URL).host;
 
 function post(path, body) {
   return new Promise((resolve, reject) => {

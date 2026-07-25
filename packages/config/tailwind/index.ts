@@ -6,19 +6,29 @@ const config: Omit<Config, "content"> = {
   theme: {
     extend: {
       colors: {
-        // Zambuko brand colors
+        // Hutano healthcare palette — calm teal primary with a warm accent.
         brand: {
-          50:  "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
-          950: "#172554",
+          50:  "#effbfb",
+          100: "#d6f3f4",
+          200: "#b1e5e8",
+          300: "#7fd1d6",
+          400: "#47b3bb",
+          500: "#278f99",
+          600: "#1a6e7e",
+          700: "#175967",
+          800: "#174955",
+          900: "#163d47",
+          950: "#07252c",
+        },
+        accent: {
+          50: "#fff8f1",
+          100: "#ffead7",
+          200: "#ffd1ae",
+          300: "#ffae78",
+          400: "#f98a47",
+          500: "#f07038",
+          600: "#d95520",
+          700: "#b5401a",
         },
         emergency: {
           50:  "#fff1f2",
@@ -49,8 +59,8 @@ const config: Omit<Config, "content"> = {
         "3xl": "1.5rem",
       },
       boxShadow: {
-        card: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-        "card-hover": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+        card: "0 1px 2px rgb(15 23 42 / 0.04)",
+        "card-hover": "0 10px 24px -12px rgb(15 23 42 / 0.28)",
         emergency: "0 0 0 4px rgb(244 63 94 / 0.3)",
       },
       animation: {

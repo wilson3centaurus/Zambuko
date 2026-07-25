@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
 import { Button } from "@zambuko/ui";
@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,14 +16,31 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error(error.message);
+
+    try {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) {
+            toast.error(error.message);
+            return;
+          }
+          router.replace("/dashboard");
+          router.refresh();
+          return;
+        } catch (error) {
+          if (attempt === 0) {
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            continue;
+          }
+          throw error;
+        }
+      }
+    } catch {
+      toast.error("We could not reach the secure sign-in service. Check your connection and try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (

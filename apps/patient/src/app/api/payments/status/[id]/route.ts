@@ -1,64 +1,79 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { createServerSideClient } from "@zambuko/database/client";
 
 /**
  * GET /api/payments/status/[id]
- * Polls the Paynow status for a payment and returns the current state.
- * Called by the book page every 5 seconds after initiating a mobile payment.
+ * Polls Paynow for a payment owned by the authenticated patient.
  */
 export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const { id } = params;
-  if (!id) {
-    return NextResponse.json({ error: "Missing payment ID" }, { status: 400 });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    return NextResponse.json({ error: "Payment service is not configured." }, { status: 503 });
   }
 
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const userClient = createServerSideClient(cookies());
+  const { data: { user }, error: authError } = await userClient.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
+
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 
   const { data: payment, error } = await admin
     .from("payments")
-    .select("id, status, paynow_poll_url, consultation_id")
-    .eq("id", id)
+    .select("id, patient_id, status, paynow_poll_url, consultation_id")
+    .eq("id", params.id)
+    .eq("patient_id", user.id)
     .single();
 
   if (error || !payment) {
     return NextResponse.json({ error: "Payment not found" }, { status: 404 });
   }
 
-  // Already resolved — return cached state immediately
-  if (payment.status === "paid") {
+  if (payment.status === "success") {
     return NextResponse.json({ status: "paid", consultation_id: payment.consultation_id });
   }
-  if (payment.status === "failed") {
+  if (["failed", "expired", "refunded"].includes(payment.status)) {
     return NextResponse.json({ status: "failed" });
   }
 
-  // Poll Paynow live via a plain GET to the poll URL
   if (payment.paynow_poll_url) {
     try {
-      const pollResp = await fetch(payment.paynow_poll_url);
-      const pollText = await pollResp.text();
-      const pollParams = new URLSearchParams(pollText);
-      const pollStatus = pollParams.get("status")?.toLowerCase() ?? "pending";
+      const pollResponse = await fetch(payment.paynow_poll_url, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(8_000),
+      });
+      const pollText = await pollResponse.text();
+      const pollStatus = new URLSearchParams(pollText).get("status")?.toLowerCase() ?? "pending";
 
       if (pollStatus === "paid") {
-        await admin.from("payments").update({ status: "paid" }).eq("id", id);
+        await admin
+          .from("payments")
+          .update({ status: "success", paid_at: new Date().toISOString() })
+          .eq("id", payment.id)
+          .eq("status", "pending");
         return NextResponse.json({ status: "paid", consultation_id: payment.consultation_id });
       }
-      if (pollStatus === "cancelled" || pollStatus === "failed") {
-        await admin.from("payments").update({ status: "failed" }).eq("id", id);
+      if (["cancelled", "failed", "disputed"].includes(pollStatus)) {
+        await admin
+          .from("payments")
+          .update({ status: "failed", failure_reason: `Provider status: ${pollStatus}` })
+          .eq("id", payment.id)
+          .eq("status", "pending");
         return NextResponse.json({ status: "failed" });
       }
-    } catch (err) {
-      console.error("[payments/status] poll error:", err);
+    } catch {
+      // A transient provider failure remains pending and can be polled again.
     }
   }
 
   return NextResponse.json({ status: "pending" });
 }
-

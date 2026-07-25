@@ -172,7 +172,7 @@ function NewPrescriptionContent() {
         <Card>
           <CardBody className="space-y-3">
             <div>
-              <label className="text-xs font-semibold text-gray-500 block mb-1">Doctor's Notes (optional)</label>
+              <label className="text-xs font-semibold text-gray-500 block mb-1">Doctor&apos;s Notes (optional)</label>
               <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
                 placeholder="Additional instructions or counselling…"
                 rows={3}

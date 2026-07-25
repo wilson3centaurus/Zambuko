@@ -2,103 +2,148 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { initiateMobilePayment, type MobileProvider } from "@/lib/paynow/client";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const MOBILE_PROVIDERS = new Set<MobileProvider>(["ecocash", "onemoney", "telecash"]);
 
 /**
  * POST /api/payments/initiate
- * Initiates a Paynow mobile money STK push for a consultation.
+ * Authenticates the patient and derives the doctor and fee from trusted data.
  */
 export async function POST(req: NextRequest) {
-  console.log("[payments/initiate] ── request received ──");
   try {
-    // Authenticate via Supabase Bearer token
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+      return NextResponse.json({ error: "Payment service is not configured." }, { status: 503 });
+    }
+
     const authHeader = req.headers.get("authorization");
-    if (!authHeader) {
-      console.error("[payments/initiate] no auth header");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    if (!authHeader) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const supabaseUser = createClient(SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
     });
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: { user }, error: authErr } = await supabaseUser.auth.getUser();
-    if (authErr || !user) {
-      console.error("[payments/initiate] auth failed:", authErr);
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.log("[payments/initiate] authenticated user:", user.id, user.email);
-
-    const body = await req.json();
-    console.log("[payments/initiate] request body:", JSON.stringify(body));
-    const { consultation_id, doctor_id, amount, provider, phone_number } = body;
-
-    if (!consultation_id || !doctor_id || !amount || !provider || !phone_number) {
-      console.error("[payments/initiate] missing fields:", { consultation_id, doctor_id, amount, provider, phone_number });
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    let body: { consultation_id?: string; provider?: MobileProvider; phone_number?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
     }
 
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const consultationId = body.consultation_id;
+    const provider = body.provider;
+    const phone = body.phone_number?.replace(/^\+263/, "0").replace(/\s|-/g, "");
+    if (!consultationId || !provider || !MOBILE_PROVIDERS.has(provider) || !phone) {
+      return NextResponse.json({ error: "Consultation, provider, and phone number are required." }, { status: 400 });
+    }
+    if (!/^0[7-8]\d{8}$/.test(phone)) {
+      return NextResponse.json({ error: "Enter a valid Zimbabwe mobile-money number." }, { status: 400 });
+    }
 
-    // Create payment record
-    const { data: payment, error: payErr } = await admin
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: consultation, error: consultationError } = await admin
+      .from("consultations")
+      .select("id, patient_id, doctor_id, status")
+      .eq("id", consultationId)
+      .eq("patient_id", user.id)
+      .single();
+
+    if (consultationError || !consultation?.doctor_id) {
+      return NextResponse.json({ error: "Consultation not found or no doctor is assigned." }, { status: 404 });
+    }
+    if (!["pending", "accepted"].includes(consultation.status)) {
+      return NextResponse.json({ error: "This consultation is not awaiting payment." }, { status: 409 });
+    }
+
+    const [{ data: doctor, error: doctorError }, { data: existingPayment }] = await Promise.all([
+      admin
+        .from("doctors")
+        .select("consultation_fee_usd")
+        .eq("id", consultation.doctor_id)
+        .single(),
+      admin
+        .from("payments")
+        .select("id, status, paynow_poll_url")
+        .eq("consultation_id", consultation.id)
+        .eq("patient_id", user.id)
+        .in("status", ["pending", "success"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    if (doctorError || !doctor) {
+      return NextResponse.json({ error: "The doctor’s consultation fee is unavailable." }, { status: 409 });
+    }
+    if (existingPayment?.status === "success") {
+      return NextResponse.json({ error: "This consultation has already been paid." }, { status: 409 });
+    }
+    if (existingPayment?.status === "pending" && existingPayment.paynow_poll_url) {
+      return NextResponse.json({
+        payment_id: existingPayment.id,
+        poll_url: existingPayment.paynow_poll_url,
+        message: "A payment request is already pending. Check your phone to complete it.",
+      });
+    }
+
+    const amount = Number(doctor.consultation_fee_usd);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json({ error: "The configured consultation fee is invalid." }, { status: 409 });
+    }
+
+    const platformFee = Number((amount * 0.1).toFixed(2));
+    const doctorPayout = Number((amount - platformFee).toFixed(2));
+    const { data: payment, error: paymentError } = await admin
       .from("payments")
       .insert({
-        consultation_id,
+        consultation_id: consultation.id,
         patient_id: user.id,
-        doctor_id,
+        doctor_id: consultation.doctor_id,
         provider,
         amount_usd: amount,
-        phone_number,
+        phone_number: phone,
+        platform_fee_usd: platformFee,
+        doctor_payout_usd: doctorPayout,
         status: "pending",
       })
       .select("id")
       .single();
 
-    if (payErr || !payment) {
-      console.error("[payments/initiate] payment record insert error:", payErr);
-      return NextResponse.json({ error: "Failed to create payment record" }, { status: 500 });
+    if (paymentError || !payment) {
+      return NextResponse.json({ error: "Failed to create payment record." }, { status: 500 });
     }
-    console.log("[payments/initiate] payment record created:", payment.id);
-
-    const phone = phone_number.replace(/^\+263/, "0").replace(/\s/g, "");
-    const email = user.email ?? `patient@hutano.co.zw`;
-    const description = `Hutano Consultation - ${payment.id}`;
-    const method: MobileProvider =
-      provider === "onemoney" ? "onemoney"
-      : provider === "telecash" ? "telecash"
-      : "ecocash";
-
-    console.log("[payments/initiate] calling initiateMobilePayment:", { reference: payment.id, email, phone, amount, description, method });
 
     const result = await initiateMobilePayment({
       reference: payment.id,
-      email,
+      email: user.email ?? "patient@hutano.co.zw",
       phone,
-      amount: Number(amount),
-      description,
-      method,
+      amount,
+      description: `Hutano consultation ${payment.id}`,
+      method: provider,
     });
 
-    console.log("[payments/initiate] initiateMobilePayment result:", JSON.stringify(result));
-
     if (!result.success) {
-      await admin.from("payments").update({ status: "failed" }).eq("id", payment.id);
-      return NextResponse.json({ error: result.error || "Payment initiation failed" }, { status: 502 });
+      await admin
+        .from("payments")
+        .update({ status: "failed", failure_reason: result.error ?? "Provider initiation failed" })
+        .eq("id", payment.id);
+      return NextResponse.json({ error: result.error || "Payment initiation failed." }, { status: 502 });
     }
 
     await admin.from("payments").update({ paynow_poll_url: result.pollUrl }).eq("id", payment.id);
-    console.log("[payments/initiate] ✓ success, pollUrl:", result.pollUrl);
-
     return NextResponse.json({
       payment_id: payment.id,
       poll_url: result.pollUrl,
+      amount,
       message: result.instructions || "Check your phone for a payment prompt and enter your PIN.",
     });
-  } catch (err) {
-    console.error("[payments/initiate] unhandled error:", err);
-    return NextResponse.json({ error: "Payment service unavailable" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Payment service unavailable." }, { status: 500 });
   }
 }
-

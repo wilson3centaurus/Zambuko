@@ -23,7 +23,6 @@ function useTheme() {
   }
   return { dark, toggle };
 }
-
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const Icons = {
   dashboard: (
@@ -128,6 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { dark, toggle } = useTheme();
   const [user, setUser] = useState<{ email: string; name: string } | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -170,8 +170,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
       {/* ── Sidebar ── */}
-      <aside className="w-60 bg-gray-950 flex flex-col fixed inset-y-0 left-0 z-50">
+      <aside className={`${mobileMenuOpen ? "flex" : "hidden"} fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex-col bg-gray-950 shadow-2xl lg:flex lg:w-60 lg:shadow-none`}>
         {/* Logo */}
         <div className="px-5 py-4 border-b border-gray-800">
           <div className="flex items-center gap-2.5">
@@ -202,7 +210,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   return (
                     <button
                       key={item.href}
-                      onClick={() => router.push(item.href)}
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        router.push(item.href);
+                      }}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         isActive
                           ? "bg-white text-gray-900"
@@ -232,17 +243,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ── Main column ── */}
-      <div className="flex-1 ml-60 flex flex-col min-h-screen">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-60">
         {/* Top header */}
-        <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center px-6 gap-4 sticky top-0 z-40">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-gray-800 bg-gray-900 px-4 sm:px-6">
+          <button
+            type="button"
+            aria-label="Open navigation"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen(true)}
+            className="grid h-10 w-10 place-items-center rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white lg:hidden"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
           {/* Breadcrumb */}
           <div className="flex-1 flex items-center gap-2 text-sm">
-            <span className="text-gray-500">Dashboard</span>
+            <span className="hidden text-gray-500 sm:inline">Dashboard</span>
             {pageName !== "Dashboard" && (
               <>
-                <span className="text-gray-700">/</span>
+                <span className="hidden text-gray-700 sm:inline">/</span>
                 <span className="text-white font-medium">{pageName}</span>
               </>
+            )}
+            {pageName === "Dashboard" && (
+              <span className="font-medium text-white sm:hidden">Dashboard</span>
             )}
           </div>
 
@@ -251,6 +276,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Theme toggle */}
             <button
               onClick={toggle}
+              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
               title={dark ? "Switch to Light Mode" : "Switch to Dark Mode"}
               className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
             >
@@ -258,7 +284,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
 
             {/* Bell */}
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+            <button aria-label="Notifications" className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
               {Icons.bell}
             </button>
 
@@ -323,4 +349,3 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   );
 }
-        
