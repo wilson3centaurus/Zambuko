@@ -1,0 +1,4 @@
+<resources>
+    <string name="no_file_picker">No compatible file picker is installed.</string>
+    <string name="cannot_open_link">This link could not be opened.</string>
+</resources>

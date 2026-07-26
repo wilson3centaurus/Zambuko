@@ -1,0 +1,66 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.hutano.staff"
+    compileSdk 36
+
+    defaultConfig {
+        minSdk 24
+        targetSdk 36
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    flavorDimensions += "role"
+    productFlavors {
+        doctor {
+            dimension "role"
+            applicationId "com.hutano.doctor"
+            buildConfigField "String", "APP_URL", "\"https://zambuko-doctor.vercel.app/\""
+            buildConfigField "String", "APP_HOST", "\"zambuko-doctor.vercel.app\""
+            manifestPlaceholders = [appHost: "zambuko-doctor.vercel.app"]
+            resValue "string", "app_name", "Hutano Doctor"
+            resValue "color", "role_accent", "#0284C7"
+        }
+        dispatch {
+            dimension "role"
+            applicationId "com.hutano.dispatch"
+            buildConfigField "String", "APP_URL", "\"https://zambuko-dispatch.vercel.app/\""
+            buildConfigField "String", "APP_HOST", "\"zambuko-dispatch.vercel.app\""
+            manifestPlaceholders = [appHost: "zambuko-dispatch.vercel.app"]
+            resValue "string", "app_name", "Hutano Dispatch"
+            resValue "color", "role_accent", "#DC2626"
+        }
+        admin {
+            dimension "role"
+            applicationId "com.hutano.admin"
+            buildConfigField "String", "APP_URL", "\"https://zambuko-admin.vercel.app/\""
+            buildConfigField "String", "APP_HOST", "\"zambuko-admin.vercel.app\""
+            manifestPlaceholders = [appHost: "zambuko-admin.vercel.app"]
+            resValue "string", "app_name", "Hutano Admin"
+            resValue "color", "role_accent", "#4F46E5"
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildTypes {
+        release {
+            // Installable pilot APKs. Replace with a durable private signing key
+            // before Google Play or managed-enterprise distribution.
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+    }
+}
