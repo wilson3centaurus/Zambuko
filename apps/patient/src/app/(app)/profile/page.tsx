@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
@@ -8,8 +8,10 @@ import { Card, CardBody, Button, PasswordInput, ImageUpload } from "@zambuko/ui"
 import Link from "next/link";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { getMissingSetupFields } from "@/lib/patient-setup";
 
 type BloodType = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | "unknown";
+type EditableSection = "personal" | "medical" | "emergency" | "password";
 
 const BLOOD_TYPES: BloodType[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"];
 
@@ -24,9 +26,9 @@ const COMMON_ALLERGIES = [
 
 export default function ProfilePage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const qc = useQueryClient();
-  const [editSection, setEditSection] = useState<"personal" | "medical" | "emergency" | "password" | null>(null);
+  const [editSection, setEditSection] = useState<EditableSection | null>(null);
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
   const [pwSaving, setPwSaving] = useState(false);
   const [consentSaving, setConsentSaving] = useState(false);
@@ -74,6 +76,7 @@ export default function ProfilePage() {
 
   const [form, setForm] = useState({
     full_name: "",
+    phone: "",
     date_of_birth: "",
     gender: "",
     city: "",
@@ -95,6 +98,7 @@ export default function ProfilePage() {
     if (!data) return;
     setForm({
       full_name: data.profile?.full_name ?? "",
+      phone: data.profile?.phone ?? "",
       date_of_birth: data.profile?.date_of_birth ?? "",
       gender: data.profile?.gender ?? "",
       city: data.profile?.city ?? "",
@@ -113,35 +117,57 @@ export default function ProfilePage() {
   }, [data]);
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      if (form.date_of_birth && (form.date_of_birth > today || form.date_of_birth < earliestDob)) {
-        throw new Error("Enter a valid date of birth.");
-      }
+    mutationFn: async (section: Exclude<EditableSection, "password">) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      await Promise.all([
-        supabase.from("profiles").update({
-          full_name: form.full_name,
+
+      if (section === "personal") {
+        if (form.full_name.trim().length < 3) throw new Error("Full name is required.");
+        const phoneDigits = form.phone.replace(/\D/g, "");
+        if (phoneDigits.length < 7 || phoneDigits.length > 15) throw new Error("Enter a valid phone number.");
+        if (!form.date_of_birth || form.date_of_birth > today || form.date_of_birth < earliestDob) throw new Error("Enter a valid date of birth.");
+        if (!form.gender) throw new Error("Select your gender.");
+        if (!form.city.trim()) throw new Error("City is required.");
+        if (!form.province.trim()) throw new Error("Province is required.");
+        const { error } = await supabase.from("profiles").update({
+          full_name: form.full_name.trim(),
+          phone: form.phone.trim(),
           date_of_birth: form.date_of_birth || null,
           gender: form.gender || null,
-          city: form.city,
-          province: form.province,
+          city: form.city.trim(),
+          province: form.province.trim(),
           low_bandwidth_mode: form.low_bandwidth_mode,
-        }).eq("id", user.id),
-        supabase.from("patients").update({
+        }).eq("id", user.id);
+        if (error) throw error;
+      }
+
+      if (section === "medical") {
+        const { error } = await supabase.from("patients").update({
           blood_type: form.blood_type || null,
           allergies: form.allergies,
           chronic_conditions: form.chronic_conditions,
-          emergency_contact_name: form.emergency_contact_name,
-          emergency_contact_phone: form.emergency_contact_phone,
-          emergency_contact_relation: form.emergency_contact_relation,
-        }).eq("id", user.id),
-      ]);
+        }).eq("id", user.id);
+        if (error) throw error;
+      }
+
+      if (section === "emergency") {
+        if (form.emergency_contact_name.trim().length < 3) throw new Error("Emergency contact name is required.");
+        const phoneDigits = form.emergency_contact_phone.replace(/\D/g, "");
+        if (phoneDigits.length < 7 || phoneDigits.length > 15) throw new Error("Enter a valid emergency contact phone number.");
+        if (!form.emergency_contact_relation.trim()) throw new Error("Emergency contact relationship is required.");
+        const { error } = await supabase.from("patients").update({
+          emergency_contact_name: form.emergency_contact_name.trim(),
+          emergency_contact_phone: form.emergency_contact_phone.trim(),
+          emergency_contact_relation: form.emergency_contact_relation.trim(),
+        }).eq("id", user.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Profile updated!");
       setEditSection(null);
       qc.invalidateQueries({ queryKey: ["profile"] });
+      qc.invalidateQueries({ queryKey: ["patient-setup-status"] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save changes. Please retry."),
   });
@@ -162,6 +188,7 @@ export default function ProfilePage() {
     if (error) throw error;
     toast.success("Profile photo updated everywhere.");
     qc.invalidateQueries({ queryKey: ["profile"] });
+    qc.invalidateQueries({ queryKey: ["patient-setup-status"] });
   }
 
   async function uploadIdentityDocument(file: File) {
@@ -217,6 +244,7 @@ export default function ProfilePage() {
         ? "Consent recorded. A confirmation email has been sent."
         : "Consent recorded. Confirmation is available in Notifications.");
       qc.invalidateQueries({ queryKey: ["profile"] });
+      qc.invalidateQueries({ queryKey: ["patient-setup-status"] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not record consent.");
     } finally {
@@ -232,6 +260,10 @@ export default function ProfilePage() {
   function toggleItem(arr: string[], item: string, setter: (v: string[]) => void) {
     setter(arr.includes(item) ? arr.filter(a => a !== item) : [...arr, item]);
   }
+
+  const missingSetup = getMissingSetupFields(data
+    ? { profile: data.profile, patient: data.patient }
+    : null);
 
   if (isLoading) {
     return (
@@ -251,10 +283,18 @@ export default function ProfilePage() {
       </div>
 
       <div className="px-4 py-4 space-y-4 max-w-lg mx-auto pb-safe">
+        {missingSetup.length > 0 && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100">
+            <p className="font-black">Complete your required setup</p>
+            <p className="mt-1 text-xs leading-5">Fields marked with <strong>*</strong> are required before other care and learning features unlock.</p>
+            <p className="mt-2 text-xs font-semibold">Still missing: {missingSetup.join(", ")}.</p>
+          </div>
+        )}
+
         {/* Avatar + name */}
         <div className="rounded-2xl bg-white p-4 dark:bg-slate-900">
           <ImageUpload
-            label="Upload patient photo"
+            label="Upload patient photo *"
             imageUrl={data?.profile?.avatar_url}
             initials={data?.profile?.full_name}
             onUpload={uploadAvatar}
@@ -262,7 +302,7 @@ export default function ProfilePage() {
           />
           <div className="mt-3">
             <p className="font-bold text-gray-900 text-lg">{data?.profile?.full_name ?? "—"}</p>
-            <p className="text-sm text-gray-500">{data?.user?.phone ?? data?.user?.email ?? "No contact"}</p>
+            <p className="text-sm text-gray-500">{data?.profile?.phone ?? data?.user?.email ?? "No contact"}</p>
             <p className="text-xs text-brand-600 font-medium mt-0.5 capitalize">{data?.profile?.role ?? "patient"}</p>
           </div>
         </div>
@@ -271,29 +311,31 @@ export default function ProfilePage() {
         <SectionCard title="Personal Information" onEdit={() => setEditSection("personal")} isEditing={editSection === "personal"}>
           {editSection === "personal" ? (
             <div className="space-y-3">
-              <LabeledInput label="Full Name" value={form.full_name} onChange={(v) => setForm(f => ({ ...f, full_name: v }))} />
-              <LabeledInput label="Date of Birth" type="date" value={form.date_of_birth} onChange={(v) => setForm(f => ({ ...f, date_of_birth: v }))} min={earliestDob} max={today} />
+              <LabeledInput required label="Full Name" value={form.full_name} onChange={(v) => setForm(f => ({ ...f, full_name: v }))} />
+              <LabeledInput required label="Phone Number" type="tel" value={form.phone} onChange={(v) => setForm(f => ({ ...f, phone: v }))} placeholder="+263 7X XXX XXXX" />
+              <LabeledInput required label="Date of Birth" type="date" value={form.date_of_birth} onChange={(v) => setForm(f => ({ ...f, date_of_birth: v }))} min={earliestDob} max={today} />
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1">Gender</label>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">Gender <span className="text-red-600">*</span></label>
                 <div className="flex gap-2">
                   {["male", "female", "other"].map((g) => (
-                    <button key={g} onClick={() => setForm(f => ({ ...f, gender: g }))}
+                    <button type="button" key={g} onClick={() => setForm(f => ({ ...f, gender: g }))}
                       className={`flex-1 py-2 rounded-xl text-sm font-medium capitalize border transition-all ${form.gender === g ? "bg-brand-600 text-white border-brand-600" : "bg-white text-gray-700 border-gray-200"}`}>
                       {g}
                     </button>
                   ))}
                 </div>
               </div>
-              <LabeledInput label="City" value={form.city} onChange={(v) => setForm(f => ({ ...f, city: v }))} placeholder="e.g. Harare" />
-              <LabeledInput label="Province" value={form.province} onChange={(v) => setForm(f => ({ ...f, province: v }))} placeholder="e.g. Mashonaland East" />
-              <SaveButtons loading={saveMutation.isPending} onSave={() => saveMutation.mutate()} onCancel={() => setEditSection(null)} />
+              <LabeledInput required label="City" value={form.city} onChange={(v) => setForm(f => ({ ...f, city: v }))} placeholder="e.g. Harare" />
+              <LabeledInput required label="Province" value={form.province} onChange={(v) => setForm(f => ({ ...f, province: v }))} placeholder="e.g. Mashonaland East" />
+              <SaveButtons loading={saveMutation.isPending} onSave={() => saveMutation.mutate("personal")} onCancel={() => setEditSection(null)} />
             </div>
           ) : (
             <dl className="space-y-2 text-sm">
-              <InfoRow label="Date of Birth" value={data?.profile?.date_of_birth ? format(new Date(data.profile.date_of_birth), "d MMM yyyy") : "—"} />
-              <InfoRow label="Gender" value={data?.profile?.gender ?? "—"} capitalize />
-              <InfoRow label="City" value={data?.profile?.city ?? "—"} />
-              <InfoRow label="Province" value={data?.profile?.province ?? "—"} />
+              <InfoRow label="Phone Number *" value={data?.profile?.phone ?? "—"} />
+              <InfoRow label="Date of Birth *" value={data?.profile?.date_of_birth ? format(new Date(data.profile.date_of_birth), "d MMM yyyy") : "—"} />
+              <InfoRow label="Gender *" value={data?.profile?.gender ?? "—"} capitalize />
+              <InfoRow label="City *" value={data?.profile?.city ?? "—"} />
+              <InfoRow label="Province *" value={data?.profile?.province ?? "—"} />
             </dl>
           )}
         </SectionCard>
@@ -335,7 +377,7 @@ export default function ProfilePage() {
                   ))}
                 </div>
               </div>
-              <SaveButtons loading={saveMutation.isPending} onSave={() => saveMutation.mutate()} onCancel={() => setEditSection(null)} />
+              <SaveButtons loading={saveMutation.isPending} onSave={() => saveMutation.mutate("medical")} onCancel={() => setEditSection(null)} />
             </div>
           ) : (
             <dl className="space-y-2 text-sm">
@@ -350,16 +392,16 @@ export default function ProfilePage() {
         <SectionCard title="Emergency Contact" onEdit={() => setEditSection("emergency")} isEditing={editSection === "emergency"}>
           {editSection === "emergency" ? (
             <div className="space-y-3">
-              <LabeledInput label="Name" value={form.emergency_contact_name} onChange={(v) => setForm(f => ({ ...f, emergency_contact_name: v }))} placeholder="Full name" />
-              <LabeledInput label="Phone Number" type="tel" value={form.emergency_contact_phone} onChange={(v) => setForm(f => ({ ...f, emergency_contact_phone: v }))} placeholder="+263 7X XXX XXXX" />
-              <LabeledInput label="Relationship" value={form.emergency_contact_relation} onChange={(v) => setForm(f => ({ ...f, emergency_contact_relation: v }))} placeholder="e.g. Spouse, Parent, Sibling" />
-              <SaveButtons loading={saveMutation.isPending} onSave={() => saveMutation.mutate()} onCancel={() => setEditSection(null)} />
+              <LabeledInput required label="Name" value={form.emergency_contact_name} onChange={(v) => setForm(f => ({ ...f, emergency_contact_name: v }))} placeholder="Full name" />
+              <LabeledInput required label="Phone Number" type="tel" value={form.emergency_contact_phone} onChange={(v) => setForm(f => ({ ...f, emergency_contact_phone: v }))} placeholder="+263 7X XXX XXXX" />
+              <LabeledInput required label="Relationship" value={form.emergency_contact_relation} onChange={(v) => setForm(f => ({ ...f, emergency_contact_relation: v }))} placeholder="e.g. Spouse, Parent, Sibling" />
+              <SaveButtons loading={saveMutation.isPending} onSave={() => saveMutation.mutate("emergency")} onCancel={() => setEditSection(null)} />
             </div>
           ) : (
             <dl className="space-y-2 text-sm">
-              <InfoRow label="Name" value={data?.patient?.emergency_contact_name ?? "—"} />
-              <InfoRow label="Phone" value={data?.patient?.emergency_contact_phone ?? "—"} />
-              <InfoRow label="Relationship" value={data?.patient?.emergency_contact_relation ?? "—"} />
+              <InfoRow label="Name *" value={data?.patient?.emergency_contact_name ?? "—"} />
+              <InfoRow label="Phone *" value={data?.patient?.emergency_contact_phone ?? "—"} />
+              <InfoRow label="Relationship *" value={data?.patient?.emergency_contact_relation ?? "—"} />
             </dl>
           )}
         </SectionCard>
@@ -381,13 +423,13 @@ export default function ProfilePage() {
               </div>
             ) : (
               <>
-                <LabeledInput label="Full legal name" value={form.legal_full_name} onChange={(value) => setForm((current) => ({ ...current, legal_full_name: value }))} placeholder="As written on national documents" />
-                <LabeledInput label="National ID number" value={form.national_id} onChange={(value) => setForm((current) => ({ ...current, national_id: value }))} placeholder="e.g. 63-123456-A-12" />
-                <ImageUpload label={form.national_id_document_path ? "Replace ID image" : "Take/upload ID image"} initials="ID" onUpload={uploadIdentityDocument} shape="rounded" />
+                <LabeledInput required label="Full legal name" value={form.legal_full_name} onChange={(value) => setForm((current) => ({ ...current, legal_full_name: value }))} placeholder="As written on national documents" />
+                <LabeledInput required label="National ID number" value={form.national_id} onChange={(value) => setForm((current) => ({ ...current, national_id: value }))} placeholder="e.g. 63-123456-A-12" />
+                <ImageUpload label={`${form.national_id_document_path ? "Replace ID image" : "Take/upload ID image"} *`} initials="ID" onUpload={uploadIdentityDocument} shape="rounded" />
                 {form.national_id_document_path && <p className="text-xs font-semibold text-emerald-700">ID image securely uploaded and ready.</p>}
                 <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                   <input type="checkbox" checked={consentAcknowledged} onChange={(event) => setConsentAcknowledged(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-700" />
-                  <span className="text-xs leading-5 text-slate-700 dark:text-slate-200">I confirm this identity is mine, the information is accurate, and I consent to Hutano processing my health and location information for the care and emergency purposes described above.</span>
+                  <span className="text-xs leading-5 text-slate-700 dark:text-slate-200"><strong className="text-red-600">*</strong> I confirm this identity is mine, the information is accurate, and I consent to Hutano processing my health and location information for the care and emergency purposes described above.</span>
                 </label>
                 <Button onClick={recordConsent} loading={consentSaving} className="w-full">Confirm consent</Button>
               </>
@@ -484,17 +526,19 @@ function InfoRow({ label, value, capitalize }: { label: string; value: string; c
   );
 }
 
-function LabeledInput({ label, value, onChange, type = "text", placeholder, min, max }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; min?: string; max?: string;
+function LabeledInput({ label, value, onChange, type = "text", placeholder, min, max, required = false }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; min?: string; max?: string; required?: boolean;
 }) {
   return (
     <div>
-      <label className="text-xs font-semibold text-gray-500 block mb-1">{label}</label>
+      <label className="text-xs font-semibold text-gray-500 block mb-1">
+        {label} {required && <span className="text-red-600">*</span>}
+      </label>
       {type === "password" ? (
-        <PasswordInput value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        <PasswordInput required={required} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
           className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm dark:border-slate-700 dark:bg-slate-900" />
       ) : (
-        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} min={min} max={max}
+        <input required={required} type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} min={min} max={max}
           className="w-full rounded-xl border border-gray-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm dark:border-slate-700 dark:bg-slate-900" />
       )}
     </div>

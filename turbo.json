@@ -22,6 +22,7 @@
     "SENTRY_DSN"
     ,"RESEND_API_KEY"
     ,"CONSENT_FROM_EMAIL"
+    ,"CONSENT_REPLY_TO_EMAIL"
   ],
   "tasks": {
     "build": {

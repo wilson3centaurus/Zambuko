@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useMemo, useState, type MouseEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
-import { cn } from "@zambuko/ui";
+import { Button, cn } from "@zambuko/ui";
 import { toast } from "sonner";
+import { getMissingSetupFields, type PatientSetupData } from "@/lib/patient-setup";
 
 type NavItem = {
   href: string;
@@ -41,7 +44,44 @@ function NavIcon({ name, className = "h-5 w-5" }: { name: NavItem["icon"]; class
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
+  const [setupPromptOpen, setSetupPromptOpen] = useState(false);
+
+  const {
+    data: setupData,
+    isLoading: setupLoading,
+    isError: setupCheckFailed,
+    refetch: refetchSetup,
+  } = useQuery({
+    queryKey: ["patient-setup-status"],
+    queryFn: async (): Promise<PatientSetupData> => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { profile: null, patient: null };
+      const [profileResult, patientResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("full_name,phone,avatar_url,date_of_birth,gender,city,province")
+          .eq("id", user.id)
+          .single(),
+        supabase
+          .from("patients")
+          .select("emergency_contact_name,emergency_contact_phone,emergency_contact_relation,legal_full_name,national_id,national_id_document_path,consent_given_at")
+          .eq("id", user.id)
+          .single(),
+      ]);
+      if (profileResult.error) throw profileResult.error;
+      if (patientResult.error) throw patientResult.error;
+      return { profile: profileResult.data, patient: patientResult.data };
+    },
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const missingSetup = getMissingSetupFields(setupData);
+  const setupIncomplete = !setupLoading && !!setupData && missingSetup.length > 0;
+  const setupBlocked = setupIncomplete || setupCheckFailed;
+  const setupAllowedPath = pathname.startsWith("/profile") || pathname.startsWith("/emergency");
+  const showSetupGate = setupBlocked && (!setupAllowedPath || setupPromptOpen);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -53,10 +93,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
+  function canOpenDuringSetup(href: string) {
+    return href === "/profile" || href === "/emergency";
+  }
+
+  function handleRestrictedNavigation(event: MouseEvent<HTMLAnchorElement>, href: string) {
+    if (!setupBlocked || canOpenDuringSetup(href)) return;
+    event.preventDefault();
+    setSetupPromptOpen(true);
+  }
+
   return (
     <div className="min-h-app bg-slate-50 lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
       <aside className="hidden lg:flex lg:sticky lg:top-0 lg:h-screen lg:flex-col border-r border-slate-200 bg-white px-4 py-5">
-        <Link href="/dashboard" className="flex items-center gap-3 rounded-lg px-2 py-1">
+        <Link href="/dashboard" onClick={(event) => handleRestrictedNavigation(event, "/dashboard")} className="flex items-center gap-3 rounded-lg px-2 py-1">
           <Image src="/logo.svg" alt="Hutano" width={132} height={36} priority className="h-9 w-auto" />
         </Link>
 
@@ -68,9 +118,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={(event) => handleRestrictedNavigation(event, item.href)}
                 aria-current={active ? "page" : undefined}
+                aria-disabled={setupBlocked && !canOpenDuringSetup(item.href) ? true : undefined}
                 className={cn(
                   "flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold transition-colors",
+                  setupBlocked && !canOpenDuringSetup(item.href) && "opacity-45",
                   item.emergency
                     ? active ? "bg-red-50 text-red-700" : "text-red-700 hover:bg-red-50"
                     : active ? "bg-brand-50 text-brand-800" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -109,10 +162,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={(event) => handleRestrictedNavigation(event, item.href)}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
+                aria-disabled={setupBlocked && !canOpenDuringSetup(item.href) ? true : undefined}
                 className={cn(
                   "flex h-full flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold",
+                  setupBlocked && !canOpenDuringSetup(item.href) && "opacity-45",
                   item.emergency ? "relative -top-2" : active ? "text-brand-700" : "text-slate-400"
                 )}
               >
@@ -134,6 +190,71 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           })}
         </div>
       </nav>
+
+      {showSetupGate && (
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/75 p-4 backdrop-blur-sm">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="setup-required-title"
+            className="w-full max-w-md overflow-hidden rounded-[2rem] bg-white shadow-2xl dark:bg-slate-950"
+          >
+            <div className="bg-gradient-to-br from-amber-400 to-orange-600 px-6 py-7 text-white">
+              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/20 text-3xl shadow-lg" aria-hidden="true">!</span>
+              <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-white/80">Required before continuing</p>
+              <h2 id="setup-required-title" className="mt-1 text-2xl font-black">
+                {setupCheckFailed ? "We could not verify your setup" : "Complete your patient setup"}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-white/90">
+                {setupCheckFailed
+                  ? "Check your connection and retry. Your care features stay protected until setup can be verified."
+                  : "Doctors and emergency responders need this information to identify and assist you safely."}
+              </p>
+            </div>
+
+            <div className="space-y-5 p-6">
+              {!setupCheckFailed && <div>
+                <p className="text-xs font-black uppercase tracking-wider text-slate-500">Still required</p>
+                <ul className="mt-3 grid grid-cols-2 gap-2 text-sm text-slate-700 dark:text-slate-200">
+                  {missingSetup.slice(0, 8).map((field) => (
+                    <li key={field} className="flex items-start gap-2">
+                      <span className="mt-1 text-amber-600" aria-hidden="true">*</span>
+                      <span>{field}</span>
+                    </li>
+                  ))}
+                </ul>
+                {missingSetup.length > 8 && <p className="mt-2 text-xs font-semibold text-slate-500">And {missingSetup.length - 8} more required field{missingSetup.length - 8 === 1 ? "" : "s"}.</p>}
+              </div>}
+
+              {setupCheckFailed ? (
+                <>
+                  <Button autoFocus className="w-full" onClick={() => void refetchSetup()}>
+                    Retry setup check
+                  </Button>
+                  <Link href="/profile?setup=1" className="block rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-black text-slate-700 dark:border-slate-700 dark:text-slate-200">
+                    Open profile settings
+                  </Link>
+                </>
+              ) : (
+                <Button
+                  autoFocus
+                  className="w-full"
+                  onClick={() => {
+                    setSetupPromptOpen(false);
+                    router.push("/profile?setup=1");
+                  }}
+                >
+                  Go to profile settings
+                </Button>
+              )}
+              <Link href="/emergency" className="block rounded-xl border border-red-200 px-4 py-3 text-center text-sm font-black text-red-700 dark:border-red-900 dark:text-red-300">
+                Emergency? Open SOS
+              </Link>
+              <p className="text-center text-xs text-slate-500">SOS always remains available, even before setup is complete.</p>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

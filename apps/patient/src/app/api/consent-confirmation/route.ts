@@ -33,19 +33,33 @@ export async function POST(request: NextRequest) {
 
   const resendKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.CONSENT_FROM_EMAIL;
+  const replyToEmail = process.env.CONSENT_REPLY_TO_EMAIL;
   let emailSent = false;
   if (resendKey && fromEmail && user.email) {
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `consent-confirmation-${user.id}-2026-07-25`,
+      },
       body: JSON.stringify({
         from: fromEmail,
+        ...(replyToEmail ? { reply_to: replyToEmail } : {}),
         to: [user.email],
         subject: "Your Hutano consent confirmation",
         html: "<h1>Consent recorded</h1><p>Your informed consent for Hutano to process health and location information for care and emergency services has been recorded.</p><p>Consent version: 2026-07-25.</p><p>Contact Hutano support if you want to ask about access, correction, or deletion of your information.</p>",
       }),
     });
     emailSent = emailResponse.ok;
+    if (!emailResponse.ok) {
+      console.error("[consent-email] Resend rejected confirmation", {
+        status: emailResponse.status,
+        detail: (await emailResponse.text()).slice(0, 500),
+      });
+    }
+  } else {
+    console.warn("[consent-email] Confirmation email skipped because server configuration or recipient email is missing");
   }
 
   return NextResponse.json({ ok: true, emailSent });
