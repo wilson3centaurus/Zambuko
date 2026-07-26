@@ -14,8 +14,14 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const redirectTo = `${process.env.NEXT_PUBLIC_DISPATCH_APP_URL ?? window.location.origin}/reset-password`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      const callback = new URL(
+        "/auth/callback",
+        process.env.NEXT_PUBLIC_DISPATCH_APP_URL ?? window.location.origin
+      );
+      callback.searchParams.set("next", "/reset-password");
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: callback.toString(),
+      });
       if (error) throw error;
       setSent(true);
     } catch (err: any) {

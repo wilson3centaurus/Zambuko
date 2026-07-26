@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/api/")) return response;
 
   // Redirect unauthenticated users to login
-  if (!user && !pathname.startsWith("/login") && !pathname.startsWith("/forgot-password") && !pathname.startsWith("/reset-password")) {
+  if (!user && !pathname.startsWith("/login") && !pathname.startsWith("/forgot-password") && !pathname.startsWith("/reset-password") && !pathname.startsWith("/auth/callback")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

@@ -39,7 +39,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/verify") ||
     request.nextUrl.pathname.startsWith("/register") ||
     request.nextUrl.pathname.startsWith("/forgot-password") ||
-    request.nextUrl.pathname.startsWith("/reset-password");
+    request.nextUrl.pathname.startsWith("/reset-password") ||
+    request.nextUrl.pathname.startsWith("/auth/callback");
 
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone();
@@ -58,7 +59,12 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (user && isAuthRoute) {
+  const shouldLeaveAuthRoute = request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/verify") ||
+    request.nextUrl.pathname.startsWith("/register") ||
+    request.nextUrl.pathname.startsWith("/forgot-password");
+
+  if (user && shouldLeaveAuthRoute) {
     const role = user.user_metadata?.role ?? "patient";
     // Non-patients on auth routes: sign them out instead of bouncing to dashboard
     if (role !== "patient") {

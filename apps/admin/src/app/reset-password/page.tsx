@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@zambuko/database/client";
+import { createClient, establishPasswordRecoverySession } from "@zambuko/database/client";
 import { toast } from "sonner";
 import { PasswordInput } from "@zambuko/ui";
 
@@ -13,23 +13,21 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [verificationError, setVerificationError] = useState("");
 
   useEffect(() => {
-    let settled = false;
+    let active = true;
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN")) { settled = true; setReady(true); }
+      if (active && session && (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN")) setReady(true);
     });
-    const code = new URLSearchParams(window.location.search).get("code");
     void (async () => {
-      if (code) await supabase.auth.exchangeCodeForSession(code);
-      const { data } = await supabase.auth.getSession();
-      if (data.session) { settled = true; setReady(true); }
+      const result = await establishPasswordRecoverySession(supabase);
+      if (!active) return;
+      if (result.session) setReady(true);
+      else setVerificationError(result.error?.message ?? "This reset link is invalid or expired. Please request a new one.");
     })();
-    const timeout = window.setTimeout(() => {
-      if (!settled) { toast.error("Invalid or expired reset link."); router.push("/login"); }
-    }, 5000);
-    return () => { listener.subscription.unsubscribe(); window.clearTimeout(timeout); };
-  }, [router, supabase.auth]);
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, [supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +44,18 @@ export default function ResetPasswordPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (verificationError) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center px-6">
+        <div className="max-w-sm rounded-3xl bg-gray-800 p-6 text-center shadow-2xl">
+          <h1 className="text-xl font-bold text-white">Reset link unavailable</h1>
+          <p className="mt-2 text-sm text-gray-300">{verificationError}</p>
+          <a className="mt-5 inline-block font-semibold text-brand-400 hover:underline" href="/forgot-password">Send a new reset link</a>
+        </div>
+      </div>
+    );
   }
 
   if (!ready) {

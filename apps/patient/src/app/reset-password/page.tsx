@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@zambuko/database/client";
+import {
+  createClient,
+  establishPasswordRecoverySession,
+} from "@zambuko/database/client";
 import { Button, PasswordInput } from "@zambuko/ui";
 import { toast } from "sonner";
 
@@ -13,33 +16,34 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [verificationError, setVerificationError] = useState("");
 
   useEffect(() => {
-    let settled = false;
+    let active = true;
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN")) {
-        settled = true;
+      if (active && session && (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN")) {
         setReady(true);
       }
     });
-    const code = new URLSearchParams(window.location.search).get("code");
-    const verify = async () => {
-      if (code) await supabase.auth.exchangeCodeForSession(code);
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        settled = true;
+
+    void (async () => {
+      const result = await establishPasswordRecoverySession(supabase);
+      if (!active) return;
+      if (result.session) {
         setReady(true);
+      } else {
+        setVerificationError(
+          result.error?.message ??
+            "This reset link is invalid or expired. Please request a new one."
+        );
       }
+    })();
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
     };
-    void verify();
-    const timeout = window.setTimeout(() => {
-      if (!settled) {
-        toast.error("Invalid or expired reset link.");
-        router.push("/login");
-      }
-    }, 5000);
-    return () => { listener.subscription.unsubscribe(); window.clearTimeout(timeout); };
-  }, [router, supabase.auth]);
+  }, [supabase]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,6 +60,20 @@ export default function ResetPasswordPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (verificationError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-brand-700 to-brand-900">
+        <div className="mx-6 max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl">
+          <h1 className="text-xl font-bold text-gray-900">Reset link unavailable</h1>
+          <p className="mt-2 text-sm text-gray-600">{verificationError}</p>
+          <a className="mt-5 inline-block font-semibold text-brand-600 hover:underline" href="/forgot-password">
+            Send a new reset link
+          </a>
+        </div>
+      </div>
+    );
   }
 
   if (!ready) {
