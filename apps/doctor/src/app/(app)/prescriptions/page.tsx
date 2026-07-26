@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
-import { Card, CardBody, Badge, Button } from "@zambuko/ui";
+import { Card, CardBody, Badge, Button, LoadingSpinner } from "@zambuko/ui";
 import { format, isAfter } from "date-fns";
 
 export default function PrescriptionsPage() {
@@ -78,7 +78,7 @@ export default function PrescriptionsPage() {
 
       <div className="px-4 py-4 space-y-3">
         {isLoading && (
-          <div className="text-center py-12 text-slate-400">Loading…</div>
+          <LoadingSpinner label="Loading prescriptions" className="py-12" />
         )}
 
         {!isLoading && prescriptions.length === 0 && (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
+import { LoadingSpinner } from "@zambuko/ui";
 import { format } from "date-fns";
 
 export default function PatientsAdminPage() {
@@ -50,7 +51,7 @@ export default function PatientsAdminPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {isLoading && <tr><td colSpan={6} className="text-center py-8 text-gray-400">Loading…</td></tr>}
+            {isLoading && <tr><td colSpan={6} className="py-8"><LoadingSpinner label="Loading patients" /></td></tr>}
             {!isLoading && patients.length === 0 && <tr><td colSpan={6} className="text-center py-8 text-gray-400">No patients found.</td></tr>}
             {patients.map((p: any) => (
               <tr key={p.id} className="hover:bg-gray-50 transition-colors">

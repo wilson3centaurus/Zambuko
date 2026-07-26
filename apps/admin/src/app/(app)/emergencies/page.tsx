@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
+import { LoadingSpinner } from "@zambuko/ui";
 import { format } from "date-fns";
 
 export default function EmergenciesAdminPage() {
@@ -58,7 +59,7 @@ export default function EmergenciesAdminPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {isLoading && <tr><td colSpan={7} className="text-center py-8 text-gray-400">Loading…</td></tr>}
+            {isLoading && <tr><td colSpan={7} className="py-8"><LoadingSpinner label="Loading emergencies" /></td></tr>}
             {!isLoading && emergencies.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-gray-400">No emergencies found.</td></tr>}
             {emergencies.map((e: any) => (
               <tr key={e.id} className={`hover:bg-gray-50 transition-colors ${["pending"].includes(e.status) ? "bg-red-50/50" : ""}`}>

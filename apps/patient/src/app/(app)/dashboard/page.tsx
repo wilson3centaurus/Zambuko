@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@zambuko/database/client";
 import { getPatientConsultations } from "@zambuko/database";
 import { getPatientEmergencies } from "@zambuko/database";
-import { Card, CardBody, Badge, TriageBadge, DoctorStatusBadge, Button } from "@zambuko/ui";
+import { Card, CardBody, Badge, TriageBadge, DoctorStatusBadge, Button, CardSkeleton } from "@zambuko/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import type { Profile } from "@zambuko/database";
@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const qc = useQueryClient();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [patientBasics, setPatientBasics] = useState<{ emergency_contact_name?: string | null; consent_given_at?: string | null } | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [locationState, setLocationState] = useState<PermissionState | "unsupported">("prompt");
   const [storedEmergencyId, setStoredEmergencyId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -41,12 +42,16 @@ export default function DashboardPage() {
         Promise.all([
           supabase.from("profiles").select("*").eq("id", user.id).single(),
           supabase.from("patients").select("emergency_contact_name,consent_given_at").eq("id", user.id).single(),
-        ]).then(([profileResult, patientResult]) => {
-          setProfile(profileResult.data);
-          setPatientBasics(patientResult.data);
-        });
+        ])
+          .then(([profileResult, patientResult]) => {
+            setProfile(profileResult.data);
+            setPatientBasics(patientResult.data);
+          })
+          .finally(() => setProfileLoading(false));
+      } else {
+        setProfileLoading(false);
       }
-    });
+    }).catch(() => setProfileLoading(false));
     if ("permissions" in navigator) {
       navigator.permissions.query({ name: "geolocation" }).then((permission) => {
         setLocationState(permission.state);
@@ -178,7 +183,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="mx-auto -mt-4 max-w-5xl space-y-4 px-4 pb-6 lg:px-8">
-        {missingSetup.length > 0 && (
+        {profileLoading && <CardSkeleton className="h-28" lines={1} />}
+        {!profileLoading && missingSetup.length > 0 && (
           <Link href="/profile?setup=1" className="block rounded-2xl border border-amber-300 bg-amber-50 p-4 shadow-sm dark:border-amber-800 dark:bg-amber-950/50">
             <div className="flex items-start gap-3">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-200 text-lg" aria-hidden="true">!</span>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
 import { getDoctorConsultations } from "@zambuko/database";
-import { Card, CardBody, TriageBadge, Button } from "@zambuko/ui";
+import { Card, CardBody, TriageBadge, Button, CardSkeleton, LoadingSpinner } from "@zambuko/ui";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import type { DoctorStatus } from "@zambuko/database";
@@ -23,7 +23,7 @@ export default function DoctorDashboard() {
   const [doctorStatus, setDoctorStatus] = useState<DoctorStatus>("available");
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const { data: doctorProfile } = useQuery({
+  const { data: doctorProfile, isLoading: loadingProfile } = useQuery({
     queryKey: ["doctor-profile"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -55,7 +55,7 @@ export default function DoctorDashboard() {
     refetchInterval: 10_000,
   });
 
-  const { data: activeConsults = [] } = useQuery({
+  const { data: activeConsults = [], isLoading: loadingActive } = useQuery({
     queryKey: ["active-consultations"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -65,7 +65,7 @@ export default function DoctorDashboard() {
     refetchInterval: 5_000,
   });
 
-  const { data: todayConsults = [] } = useQuery({
+  const { data: todayConsults = [], isLoading: loadingToday } = useQuery({
     queryKey: ["today-consultations"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -128,7 +128,7 @@ export default function DoctorDashboard() {
             <select
               value={doctorStatus}
               onChange={(e) => updateStatus(e.target.value as DoctorStatus)}
-              disabled={updatingStatus}
+              disabled={updatingStatus || loadingProfile}
               className="bg-slate-800 text-white text-sm rounded-xl px-3 py-1.5 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               {STATUS_OPTIONS.map(s => (
@@ -141,12 +141,16 @@ export default function DoctorDashboard() {
         {/* Stats strip */}
         <div className="mx-auto mt-6 grid max-w-6xl grid-cols-3 gap-3">
           {[
-            { label: "Pending", value: pendingConsults.length, color: "text-amber-400" },
-            { label: "Active", value: activeConsults.length, color: "text-sky-400" },
-            { label: "Today", value: todayConsults.length, color: "text-green-400" },
+            { label: "Pending", value: pendingConsults.length, color: "text-amber-400", loading: loadingPending },
+            { label: "Active", value: activeConsults.length, color: "text-sky-400", loading: loadingActive },
+            { label: "Today", value: todayConsults.length, color: "text-green-400", loading: loadingToday },
           ].map(stat => (
             <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/10 px-3 py-3 text-center shadow-lg backdrop-blur">
-              <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
+              {stat.loading ? (
+                <LoadingSpinner label="" size="sm" inverse className="py-1" />
+              ) : (
+                <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
+              )}
               <p className="text-slate-400 text-xs">{stat.label}</p>
             </div>
           ))}
@@ -155,7 +159,8 @@ export default function DoctorDashboard() {
 
       <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
         {/* Active consultations */}
-        {activeConsults.length > 0 && (
+        {loadingActive && <CardSkeleton className="h-28" />}
+        {!loadingActive && activeConsults.length > 0 && (
           <section>
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Active Now</h2>
             <div className="space-y-3">

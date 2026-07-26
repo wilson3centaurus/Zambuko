@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
+import { LoadingSpinner } from "@zambuko/ui";
 import {
   AreaChart,
   Area,
@@ -16,16 +17,20 @@ import { format, subDays, startOfDay } from "date-fns";
 // ---------------------------------------------------------------------------
 // Tiny primitives (no shared-component dependency for pixel-perfect control)
 // ---------------------------------------------------------------------------
-function MetricCard({ label, value, sub, trend }: { label: string; value: string | number; sub?: string; trend?: "up" | "down" | "neutral" }) {
+function MetricCard({ label, value, sub, trend, loading = false }: { label: string; value: string | number; sub?: string; trend?: "up" | "down" | "neutral"; loading?: boolean }) {
   const trendColor = trend === "up" ? "text-emerald-500" : trend === "down" ? "text-red-500" : "text-gray-400";
   const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : null;
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900">
       <span className="text-xs font-medium text-gray-500 tracking-wide uppercase">{label}</span>
-      <div className="flex items-end gap-2">
-        <span className="text-3xl font-semibold text-gray-900 tabular-nums">{value}</span>
-        {trendIcon && <span className={`text-sm font-medium mb-0.5 ${trendColor}`}>{trendIcon}</span>}
-      </div>
+      {loading ? (
+        <LoadingSpinner label="Loading metric" size="sm" className="justify-start py-1" />
+      ) : (
+        <div className="flex items-end gap-2">
+          <span className="text-3xl font-semibold text-gray-900 tabular-nums">{value}</span>
+          {trendIcon && <span className={`text-sm font-medium mb-0.5 ${trendColor}`}>{trendIcon}</span>}
+        </div>
+      )}
       {sub && <span className="text-xs text-gray-400">{sub}</span>}
     </div>
   );
@@ -64,7 +69,7 @@ function StatusPill({ status }: { status: string }) {
 export default function AdminDashboard() {
   const supabase = createClient();
 
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
       const [doctors, patients, consultations, emergencies, revenue, pendingDoctors] = await Promise.all([
@@ -88,7 +93,7 @@ export default function AdminDashboard() {
     refetchInterval: 60_000,
   });
 
-  const { data: recentConsultations = [] } = useQuery({
+  const { data: recentConsultations = [], isLoading: consultationsLoading } = useQuery({
     queryKey: ["admin-recent-consults"],
     queryFn: async () => {
       const { data } = await supabase
@@ -100,7 +105,7 @@ export default function AdminDashboard() {
     },
   });
 
-  const { data: activeEmergencies = [] } = useQuery({
+  const { data: activeEmergencies = [], isLoading: emergenciesLoading } = useQuery({
     queryKey: ["admin-emergencies"],
     queryFn: async () => {
       const { data } = await supabase
@@ -113,7 +118,7 @@ export default function AdminDashboard() {
     refetchInterval: 10_000,
   });
 
-  const { data: chartData = [] } = useQuery({
+  const { data: chartData = [], isLoading: chartLoading } = useQuery({
     queryKey: ["admin-chart"],
     queryFn: async () => {
       const days = Array.from({ length: 7 }, (_, i) => {
@@ -155,12 +160,13 @@ export default function AdminDashboard() {
       <div className="space-y-6 px-4 py-6 sm:px-8">
         {/* KPI grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <MetricCard label="Doctors" value={stats?.doctors ?? "—"} sub="Registered on platform" />
-          <MetricCard label="Patients" value={stats?.patients ?? "—"} sub="All time" />
-          <MetricCard label="Consultations" value={stats?.consultations ?? "—"} sub="Total sessions" />
-          <MetricCard label="Emergencies" value={stats?.emergencies ?? "—"} sub="Dispatched calls" />
-          <MetricCard label="Revenue" value={stats ? `$${stats.revenue.toFixed(0)}` : "—"} sub="Confirmed payments (USD)" />
+          <MetricCard loading={statsLoading} label="Doctors" value={stats?.doctors ?? "—"} sub="Registered on platform" />
+          <MetricCard loading={statsLoading} label="Patients" value={stats?.patients ?? "—"} sub="All time" />
+          <MetricCard loading={statsLoading} label="Consultations" value={stats?.consultations ?? "—"} sub="Total sessions" />
+          <MetricCard loading={statsLoading} label="Emergencies" value={stats?.emergencies ?? "—"} sub="Dispatched calls" />
+          <MetricCard loading={statsLoading} label="Revenue" value={stats ? `$${stats.revenue.toFixed(0)}` : "—"} sub="Confirmed payments (USD)" />
           <MetricCard
+            loading={statsLoading}
             label="Unverified Doctors"
             value={stats?.pendingDoctors ?? "—"}
             sub="Awaiting license review"
@@ -174,6 +180,9 @@ export default function AdminDashboard() {
             <span className="text-sm font-semibold text-gray-900">Consultations</span>
             <span className="text-xs text-gray-400">Last 7 days</span>
           </div>
+          {chartLoading ? (
+            <LoadingSpinner label="Loading consultation chart" className="h-[180px]" />
+          ) : (
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <defs>
@@ -192,6 +201,7 @@ export default function AdminDashboard() {
               <Area type="monotone" dataKey="consultations" stroke="#111827" strokeWidth={1.5} fill="url(#grad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
+          )}
         </div>
 
         {/* Two-column tables */}
@@ -199,7 +209,9 @@ export default function AdminDashboard() {
           {/* Active emergencies */}
           <div className="rounded-lg border border-gray-200 bg-white p-5">
             <SectionHeader title="Active Emergencies" badge={activeEmergencies.length} />
-            {activeEmergencies.length === 0 ? (
+            {emergenciesLoading ? (
+              <LoadingSpinner label="Loading emergencies" className="h-28" />
+            ) : activeEmergencies.length === 0 ? (
               <p className="text-sm text-gray-400 py-6 text-center">No active emergencies</p>
             ) : (
               <table className="w-full text-sm">
@@ -226,7 +238,9 @@ export default function AdminDashboard() {
           {/* Recent consultations */}
           <div className="rounded-lg border border-gray-200 bg-white p-5">
             <SectionHeader title="Recent Consultations" />
-            {recentConsultations.length === 0 ? (
+            {consultationsLoading ? (
+              <LoadingSpinner label="Loading consultations" className="h-28" />
+            ) : recentConsultations.length === 0 ? (
               <p className="text-sm text-gray-400 py-6 text-center">No consultations yet</p>
             ) : (
               <table className="w-full text-sm">

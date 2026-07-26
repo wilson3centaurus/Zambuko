@@ -4,11 +4,13 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { createClient } from "@zambuko/database/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { LoadingSpinner } from "@zambuko/ui";
 import { toast } from "sonner";
 
 // Mapbox loaded dynamically — no SSR
 const DispatchMap = dynamic(() => import("@/components/DispatchMap"), { ssr: false, loading: () => (
-  <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+  <div className="w-full h-full bg-slate-800 flex flex-col items-center justify-center">
+    <LoadingSpinner label="" inverse />
     <span className="text-slate-500 text-sm">Loading map…</span>
   </div>
 ) });
@@ -103,7 +105,7 @@ export default function DispatchDashboard() {
   }, [userId, dispatcherLat, dispatcherLng]);
 
   // ── Active dispatch (already assigned to me) ──────────────────────
-  const { data: myActive } = useQuery({
+  const { data: myActive, isLoading: loadingActive } = useQuery({
     queryKey: ["my-dispatch", userId],
     enabled: !!userId,
     refetchInterval: 10_000,
@@ -123,7 +125,7 @@ export default function DispatchDashboard() {
   useEffect(() => { if (myActive !== undefined) setActiveDispatch(myActive); }, [myActive]);
 
   // ── Pending emergencies (no dispatcher yet) ───────────────────────
-  const { data: pending } = useQuery({
+  const { data: pending, isLoading: loadingPending } = useQuery({
     queryKey: ["pending-emergencies"],
     refetchInterval: 8_000,
     queryFn: async () => {
@@ -218,6 +220,8 @@ export default function DispatchDashboard() {
     window.open(`https://maps.google.com/maps?q=${lat},${lng}`, "_blank");
   };
 
+  const loadingDispatchData = !userId || loadingActive || loadingPending;
+
   // ── Decline dispatch ──────────────────────────────────────────────
   const declineMutation = useMutation({
     mutationFn: async (emergencyId: string) => {
@@ -255,6 +259,11 @@ export default function DispatchDashboard() {
           activeDispatch={activeDispatch}
           onEmergencyClick={(em) => setAlertEmergency(em)}
         />
+        {loadingDispatchData && (
+          <div className="absolute inset-0 z-10 grid place-items-center bg-slate-950/55 backdrop-blur-[1px]">
+            <LoadingSpinner label="Loading live emergency resources" inverse />
+          </div>
+        )}
 
         {/* Pending count badge */}
         {(pending?.length ?? 0) > 0 && !activeDispatch && (
@@ -274,7 +283,9 @@ export default function DispatchDashboard() {
       <div className="border-t border-slate-700 bg-slate-900 lg:overflow-y-auto lg:border-l lg:border-t-0">
 
         {/* ACTIVE DISPATCH CARD */}
-        {activeDispatch ? (
+        {loadingDispatchData ? (
+          <LoadingSpinner label="Loading dispatch cards" inverse className="min-h-44" />
+        ) : activeDispatch ? (
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div>

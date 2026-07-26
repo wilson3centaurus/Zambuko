@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@zambuko/database/client";
+import { LoadingSpinner } from "@zambuko/ui";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -421,7 +422,7 @@ export default function DispatchersAdminPage() {
           </thead>
           <tbody className="divide-y divide-blue-900/20">
             {isLoading && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">Loading...</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8"><LoadingSpinner label="Loading dispatchers" /></td></tr>
             )}
             {!isLoading && filtered.length === 0 && (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">No dispatchers found.</td></tr>
